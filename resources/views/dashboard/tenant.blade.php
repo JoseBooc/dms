@@ -33,7 +33,7 @@
                             <a href="#" class="btn btn-primary">
                                 <i class="fas fa-file-invoice"></i> View Bills
                             </a>
-                            <a href="#" class="btn btn-success">
+                            <a href="{{ route('maintenance-requests.create') }}" class="btn btn-success">
                                 <i class="fas fa-tools"></i> Submit Maintenance Request
                             </a>
                             <a href="#" class="btn btn-info">
@@ -81,7 +81,7 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <a href="#" class="btn btn-sm btn-info">
+                                                <a href="{{ route('maintenance-requests.show', $request) }}" class="btn btn-sm btn-info">
                                                     <i class="fas fa-eye"></i> View
                                                 </a>
                                             </td>
