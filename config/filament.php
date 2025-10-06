@@ -141,6 +141,7 @@ return [
         'register' => [
             \App\Filament\Widgets\RoomOccupancyWidget::class,
             \App\Filament\Widgets\MonthlyRevenueChart::class,
+            \App\Filament\Widgets\DashboardOverview::class,
             Widgets\AccountWidget::class,
         ],
     ],

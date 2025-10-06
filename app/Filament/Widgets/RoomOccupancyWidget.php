@@ -11,6 +11,7 @@ use Filament\Widgets\StatsOverviewWidget\Card;
 
 class RoomOccupancyWidget extends BaseWidget
 {
+    protected static ?int $sort = 1;
     protected function getCards(): array
     {
         $totalRooms = Room::count();
