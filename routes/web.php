@@ -21,24 +21,42 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
+// Redirect non-Filament login to Filament login
+Route::get('/login', function () {
+    return redirect('/dashboard/login');
+})->name('login.redirect');
+
+// Redirect register to Filament (if registration is disabled, this will show appropriate message)
+Route::get('/register', function () {
+    return redirect('/dashboard/login');
+})->name('register.redirect');
+
+// Redirect any admin URLs without proper prefix to dashboard
+Route::get('/admin', function () {
+    return redirect('/dashboard');
+});
+
+// Redirect old filament-admin URLs to new dashboard URLs
+Route::get('/filament-admin{path?}', function ($path = '') {
+    return redirect('/dashboard' . ($path ? '/' . ltrim($path, '/') : ''));
+})->where('path', '.*');
+
 Route::middleware(['auth'])->group(function () {
-    // Redirect to appropriate dashboard based on role
-    Route::get('/dashboard', function () {
-        switch (auth()->user()->role) {
-            case 'admin':
-                return redirect()->route('admin.dashboard');
-            case 'tenant':
-                return redirect()->route('tenant.dashboard');
-            case 'staff':
-                return redirect()->route('staff.dashboard');
-            default:
-                return redirect()->route('login');
-        }
-    })->name('dashboard');
+    // Legacy dashboard routes - redirect to Filament
+    Route::get('/admin/dashboard', function () {
+        return redirect('/dashboard');
+    })->name('admin.dashboard');
+    
+    Route::get('/tenant/dashboard', function () {
+        return redirect('/dashboard');
+    })->name('tenant.dashboard');
+    
+    Route::get('/staff/dashboard', function () {
+        return redirect('/dashboard');
+    })->name('staff.dashboard');
 
     // Admin routes
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
-        Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'index'])->name('admin.dashboard');
         Route::resource('room-assignments', \App\Http\Controllers\RoomAssignmentController::class);
         Route::get('room-assignments/check-availability', [\App\Http\Controllers\RoomAssignmentController::class, 'checkAvailability'])
             ->name('room-assignments.check-availability');
@@ -77,21 +95,15 @@ Route::middleware(['auth'])->group(function () {
 
     // Tenant routes
     Route::middleware(['role:tenant'])->group(function () {
-        Route::get('/tenant/dashboard', [App\Http\Controllers\TenantDashboardController::class, 'index'])->name('tenant.dashboard');
         Route::resource('maintenance-requests', \App\Http\Controllers\MaintenanceRequestController::class);
     });
 
     // Staff routes
     Route::middleware(['role:staff'])->group(function () {
-        Route::get('/staff/dashboard', [App\Http\Controllers\StaffDashboardController::class, 'index'])->name('staff.dashboard');
         Route::patch('/maintenance-tasks/{task}/status', [App\Http\Controllers\MaintenanceRequestController::class, 'updateStatus'])
             ->name('maintenance-tasks.update-status');
     });
 });
-
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

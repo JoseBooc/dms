@@ -11,7 +11,7 @@ class UtilityType extends Model
 
     protected $fillable = [
         'name',
-        'unit_of_measurement',
+        'unit',
         'description',
         'status',
     ];

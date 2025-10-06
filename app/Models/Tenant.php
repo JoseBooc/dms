@@ -18,12 +18,22 @@ class Tenant extends Model
         'gender',
         'nationality',
         'occupation',
+        'school',
+        'course',
         'civil_status',
         'phone_number',
         'alternative_phone',
         'personal_email',
         'permanent_address',
         'current_address',
+        'emergency_contact_first_name',
+        'emergency_contact_middle_name',
+        'emergency_contact_last_name',
+        'emergency_contact_relationship',
+        'emergency_contact_phone',
+        'emergency_contact_alternative_phone',
+        'emergency_contact_address',
+        'emergency_contact_email',
         'id_type',
         'id_number',
         'id_image_path',
@@ -33,6 +43,33 @@ class Tenant extends Model
     protected $casts = [
         'birth_date' => 'date',
     ];
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::deleting(function ($tenant) {
+            // Find all active room assignments for this tenant
+            $activeAssignments = $tenant->assignments()->where('status', 'active')->get();
+            
+            foreach ($activeAssignments as $assignment) {
+                // End the assignment
+                $assignment->update([
+                    'status' => 'completed',
+                    'end_date' => now()->toDateString()
+                ]);
+                
+                // Update the room occupancy
+                $room = $assignment->room;
+                if ($room) {
+                    $room->updateOccupancy();
+                }
+            }
+        });
+    }
 
     // Relationships
     public function user()
@@ -70,6 +107,16 @@ class Tenant extends Model
     public function emergencyContacts()
     {
         return $this->hasMany(EmergencyContact::class);
+    }
+
+    public function maintenanceRequests()
+    {
+        return $this->hasMany(MaintenanceRequest::class);
+    }
+
+    public function complaints()
+    {
+        return $this->hasMany(Complaint::class, 'tenant_id', 'user_id');
     }
 
     // Accessors

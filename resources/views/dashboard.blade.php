@@ -1,7 +1,14 @@
+{{-- 
+LEGACY DASHBOARD - NO LONGER USED
+This dashboard has been replaced by the Filament admin panel.
+Access the new dashboard at: /dashboard
+This file can be safely deleted as the dashboard functionality has been moved to Filament 
+--}}
+
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard Overview') }}
+            {{ __('Dashboard Overview - LEGACY') }}
         </h2>
     </x-slot>
 

@@ -68,4 +68,17 @@ class Room extends Model
     {
         return $this->hasMany(UtilityReading::class);
     }
+
+    /**
+     * Update room occupancy based on current assignments
+     */
+    public function updateOccupancy()
+    {
+        $activeAssignments = $this->currentAssignments()->count();
+        
+        $this->update([
+            'current_occupants' => $activeAssignments,
+            'status' => $activeAssignments > 0 ? 'occupied' : 'available'
+        ]);
+    }
 }

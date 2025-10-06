@@ -27,7 +27,10 @@ class MaintenanceRequest extends Model
 
     public function tenant(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Tenant::class)->withDefault([
+            'first_name' => 'Former',
+            'last_name' => 'Tenant'
+        ]);
     }
 
     public function room(): BelongsTo

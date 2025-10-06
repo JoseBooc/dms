@@ -45,7 +45,10 @@ class Bill extends Model
     // Relationships
     public function tenant()
     {
-        return $this->belongsTo(User::class, 'tenant_id');
+        return $this->belongsTo(User::class, 'tenant_id')->withDefault([
+            'first_name' => 'Former',
+            'last_name' => 'Tenant'
+        ]);
     }
 
     public function room()
