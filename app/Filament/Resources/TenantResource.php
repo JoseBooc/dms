@@ -125,6 +125,7 @@ class TenantResource extends Resource
                                 'married' => 'Married',
                                 'divorced' => 'Divorced',
                                 'widowed' => 'Widowed',
+                                'separated' => 'Separated',
                             ])
                             ->required(),
                     ])

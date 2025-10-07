@@ -16,6 +16,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     if (auth()->check()) {
+        $user = auth()->user();
+        if ($user->role === 'tenant') {
+            return redirect('/dashboard/tenant-dashboard');
+        }
         return redirect('/dashboard');
     }
     return redirect('/login');
@@ -48,8 +52,30 @@ Route::middleware(['auth'])->group(function () {
     })->name('admin.dashboard');
     
     Route::get('/tenant/dashboard', function () {
+        if (auth()->check() && auth()->user()->isTenant()) {
+            return redirect()->route('tenant.dashboard');
+        }
         return redirect('/dashboard');
-    })->name('tenant.dashboard');
+    });
+    
+
+    
+    // Debug route to check and update user role
+    Route::get('/debug/user', function () {
+        $user = auth()->user();
+        $output = "Current User: " . $user->name . " (" . $user->email . ")<br>";
+        $output .= "Current Role: " . $user->role . "<br>";
+        
+        // Update to tenant role if needed
+        if ($user->role !== 'tenant') {
+            $user->role = 'tenant';
+            $user->save();
+            $output .= "Role updated to: tenant<br>";
+        }
+        
+        $output .= '<a href="/dashboard/tenant-dashboard">Go to Tenant Dashboard</a>';
+        return $output;
+    });
     
     Route::get('/staff/dashboard', function () {
         return redirect('/dashboard');
@@ -94,6 +120,32 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Tenant routes
+    Route::middleware(['role:tenant'])->prefix('tenant')->name('tenant.')->group(function () {
+        Route::get('/test', function() {
+            return view('tenant.test-dashboard');
+        })->name('test');
+        Route::get('/dashboard', [\App\Http\Controllers\TenantController::class, 'dashboard'])->name('dashboard');
+        Route::get('/bills', [\App\Http\Controllers\TenantController::class, 'bills'])->name('bills');
+        Route::get('/bills/{bill}', [\App\Http\Controllers\TenantController::class, 'showBill'])->name('bills.show');
+        
+        Route::get('/maintenance', [\App\Http\Controllers\TenantController::class, 'maintenanceRequests'])->name('maintenance.index');
+        Route::get('/maintenance/create', [\App\Http\Controllers\TenantController::class, 'createMaintenanceRequest'])->name('maintenance.create');
+        Route::post('/maintenance', [\App\Http\Controllers\TenantController::class, 'storeMaintenanceRequest'])->name('maintenance.store');
+        
+        Route::get('/complaints', [\App\Http\Controllers\TenantController::class, 'complaints'])->name('complaints.index');
+        Route::get('/complaints/create', [\App\Http\Controllers\TenantController::class, 'createComplaint'])->name('complaints.create');
+        Route::post('/complaints', [\App\Http\Controllers\TenantController::class, 'storeComplaint'])->name('complaints.store');
+        
+        Route::get('/profile', [\App\Http\Controllers\TenantController::class, 'profile'])->name('profile');
+        
+        // Rent Information routes
+        Route::prefix('rent')->name('rent.')->group(function () {
+            Route::get('/details', [\App\Http\Controllers\TenantController::class, 'rentDetails'])->name('details');
+            Route::get('/utilities', [\App\Http\Controllers\TenantController::class, 'utilityDetails'])->name('utilities');
+            Route::get('/room-info', [\App\Http\Controllers\TenantController::class, 'roomInformation'])->name('room-info');
+        });
+    });
+
     Route::middleware(['role:tenant'])->group(function () {
         Route::resource('maintenance-requests', \App\Http\Controllers\MaintenanceRequestController::class);
     });
