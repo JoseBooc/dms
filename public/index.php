@@ -3,6 +3,10 @@
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 
+// Increase execution time and memory limits to prevent timeouts
+ini_set('max_execution_time', 300); // 5 minutes
+ini_set('memory_limit', '1024M'); // 1GB
+
 define('LARAVEL_START', microtime(true));
 
 /*

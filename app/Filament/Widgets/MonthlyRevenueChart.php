@@ -27,7 +27,7 @@ class MonthlyRevenueChart extends LineChartWidget
             $revenue = Bill::whereMonth('created_at', $date->month)
                 ->whereYear('created_at', $date->year)
                 ->where('status', 'paid')
-                ->sum('amount');
+                ->sum('total_amount');
                 
             $revenues[] = (float) $revenue;
         }

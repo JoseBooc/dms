@@ -85,6 +85,15 @@ class BillController extends Controller
             'paid_at' => 'nullable|date',
         ]);
 
+        // Map 'amount' from form to 'total_amount' for database
+        $validated['total_amount'] = $validated['amount'];
+        unset($validated['amount']);
+
+        // Add created_by if not already set (for new records this would be needed in store method)
+        if (!isset($validated['created_by'])) {
+            $validated['created_by'] = auth()->id();
+        }
+
         // If status is not paid, clear paid_at
         if ($validated['status'] !== 'paid') {
             $validated['paid_at'] = null;

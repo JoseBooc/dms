@@ -25,7 +25,7 @@ class RoomOccupancyWidget extends BaseWidget
         $monthlyRevenue = Bill::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->where('status', 'paid')
-            ->sum('amount');
+            ->sum('total_amount');
 
         return [
             Card::make('Total Rooms', $totalRooms)

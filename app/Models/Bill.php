@@ -15,7 +15,6 @@ class Bill extends Model
         'bill_type',
         'description',
         'details',
-        'amount',
         'created_by',
         'bill_date',
         'room_rate',
@@ -32,7 +31,6 @@ class Bill extends Model
     protected $casts = [
         'bill_date' => 'date',
         'due_date' => 'date',
-        'amount' => 'decimal:2',
         'room_rate' => 'decimal:2',
         'electricity' => 'decimal:2',
         'water' => 'decimal:2',

@@ -13,9 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('bills', function (Blueprint $table) {
-            $table->decimal('amount', 10, 2)->nullable()->after('details');
-        });
+        // This migration is no longer needed as the bills table already has 'total_amount'
+        // instead of 'amount' column. Skipping to avoid conflicts.
     }
 
     /**

@@ -97,7 +97,7 @@
                                     <input type="number" 
                                            id="amount" 
                                            name="amount" 
-                                           value="{{ old('amount', $bill->amount) }}" 
+                                           value="{{ old('amount', $bill->total_amount) }}" 
                                            step="0.01"
                                            min="0"
                                            class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 @error('amount') border-red-300 @enderror"

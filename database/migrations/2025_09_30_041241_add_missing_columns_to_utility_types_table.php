@@ -14,10 +14,19 @@ return new class extends Migration
     public function up()
     {
         Schema::table('utility_types', function (Blueprint $table) {
-            $table->string('name')->after('id');
-            $table->string('unit')->after('name');
-            $table->text('description')->nullable()->after('unit');
-            $table->enum('status', ['active', 'inactive'])->default('active')->after('description');
+            // Check if columns exist before adding them
+            if (!Schema::hasColumn('utility_types', 'name')) {
+                $table->string('name')->after('id');
+            }
+            if (!Schema::hasColumn('utility_types', 'unit')) {
+                $table->string('unit')->after('name');
+            }
+            if (!Schema::hasColumn('utility_types', 'description')) {
+                $table->text('description')->nullable()->after('unit');
+            }
+            if (!Schema::hasColumn('utility_types', 'status')) {
+                $table->enum('status', ['active', 'inactive'])->default('active')->after('description');
+            }
         });
     }
 

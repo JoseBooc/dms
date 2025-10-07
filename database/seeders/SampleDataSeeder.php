@@ -381,7 +381,7 @@ class SampleDataSeeder extends Seeder
                         'description' => 'Monthly room rental',
                         'bill_date' => Carbon::now()->subMonths($i)->startOfMonth()->toDateString(),
                         'due_date' => Carbon::now()->subMonths($i)->addDays(15)->toDateString(),
-                        'amount' => $room->rate,
+                        'created_by' => 1, // Assuming admin user ID is 1
                         'room_rate' => $room->rate,
                         'electricity' => 0,
                         'water' => 0,
@@ -407,7 +407,7 @@ class SampleDataSeeder extends Seeder
                     'description' => 'Utility consumption',
                     'bill_date' => Carbon::now()->subMonth()->toDateString(),
                     'due_date' => Carbon::now()->addDays(15)->toDateString(),
-                    'amount' => $utilityAmount,
+                    'created_by' => 1, // Assuming admin user ID is 1
                     'room_rate' => 0,
                     'electricity' => rand(300, 800),
                     'water' => rand(100, 300),
