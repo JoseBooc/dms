@@ -11,11 +11,7 @@ use App\Models\MaintenanceRequest;
 
 class Dashboard extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-view-grid';
-    
-    protected static ?string $navigationLabel = 'Dashboard';
-    
-    protected static ?int $navigationSort = 1;
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static string $view = 'filament.pages.dashboard';
     

@@ -74,11 +74,43 @@ class Room extends Model
      */
     public function updateOccupancy()
     {
-        $activeAssignments = $this->currentAssignments()->count();
+        $activeAssignments = $this->assignments()->where('status', 'active')->count();
         
-        $this->update([
-            'current_occupants' => $activeAssignments,
-            'status' => $activeAssignments > 0 ? 'occupied' : 'available'
-        ]);
+        $this->current_occupants = $activeAssignments;
+        
+        // Update status based on capacity
+        if ($activeAssignments >= $this->capacity) {
+            $this->status = 'occupied';
+        } elseif ($activeAssignments > 0) {
+            $this->status = 'available'; // Partially occupied but still available
+        } else {
+            $this->status = 'available'; // Empty room
+        }
+        
+        $this->saveQuietly();
+    }
+
+    /**
+     * Get formatted occupancy display (e.g., "1/2", "2/2")
+     */
+    public function getOccupancyDisplayAttribute(): string
+    {
+        return $this->current_occupants . '/' . $this->capacity;
+    }
+
+    /**
+     * Check if room is at full capacity
+     */
+    public function isFullyOccupied(): bool
+    {
+        return $this->current_occupants >= $this->capacity;
+    }
+
+    /**
+     * Check if room has available space
+     */
+    public function hasAvailableSpace(): bool
+    {
+        return $this->current_occupants < $this->capacity;
     }
 }

@@ -30,7 +30,7 @@ class MaintenanceRequestController extends Controller
             ->first();
 
         if (!$active) {
-            return redirect()->route('tenant.dashboard')
+            return redirect('/dashboard/tenant-dashboard')
                 ->with('error', 'You need an active room assignment to submit a maintenance request.');
         }
 

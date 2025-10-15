@@ -84,7 +84,7 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($this->getViewData()['utilityReadings']->flatten()->sortByDesc('reading_date')->take(10) as $reading)
                                     @php
-                                        $previousReading = UtilityReading::where('room_id', $reading->room_id)
+                                        $previousReading = \App\Models\UtilityReading::where('room_id', $reading->room_id)
                                             ->where('utility_type_id', $reading->utility_type_id)
                                             ->where('reading_date', '<', $reading->reading_date)
                                             ->orderBy('reading_date', 'desc')

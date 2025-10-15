@@ -26,62 +26,7 @@ class TenantController extends Controller
         });
     }
 
-    public function dashboard()
-    {
-        $user = Auth::user();
-        $tenant = $user->tenant; // Get the tenant record
-        
-        if (!$tenant) {
-            // Create a basic tenant record if it doesn't exist
-            $tenant = Tenant::create([
-                'user_id' => $user->id,
-                'first_name' => explode(' ', $user->name)[0],
-                'last_name' => explode(' ', $user->name)[1] ?? '',
-                'personal_email' => $user->email,
-                'birth_date' => '1990-01-01',
-                'gender' => 'not_specified',
-                'nationality' => 'Filipino',
-                'civil_status' => 'single',
-                'emergency_contact_first_name' => 'Emergency',
-                'emergency_contact_last_name' => 'Contact',
-                'emergency_contact_phone' => '000-000-0000',
-                'emergency_contact_relationship' => 'parent',
-            ]);
-        }
-        
-        // Get tenant's current room assignment
-        $currentAssignment = RoomAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'active')
-            ->with('room')
-            ->first();
 
-        // Get recent bills (assuming bills are linked to tenant_id)
-        $recentBills = Bill::where('tenant_id', $tenant->id)
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
-        // Get pending maintenance requests
-        $maintenanceRequests = MaintenanceRequest::where('tenant_id', $tenant->id)
-            ->where('status', '!=', 'completed')
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
-        // Get recent complaints
-        $complaints = Complaint::where('tenant_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
-        return view('tenant.dashboard', compact(
-            'user',
-            'currentAssignment',
-            'recentBills',
-            'maintenanceRequests',
-            'complaints'
-        ));
-    }
 
     public function bills()
     {

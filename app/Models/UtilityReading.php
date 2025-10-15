@@ -11,10 +11,12 @@ class UtilityReading extends Model
 
     protected $fillable = [
         'room_id',
+        'tenant_id',
         'utility_type_id',
         'current_reading',
         'previous_reading',
         'consumption',
+        'price',
         'reading_date',
         'recorded_by',
         'notes',
@@ -25,8 +27,54 @@ class UtilityReading extends Model
         'current_reading' => 'decimal:2',
         'previous_reading' => 'decimal:2',
         'consumption' => 'decimal:2',
+        'price' => 'decimal:2',
         'reading_date' => 'date',
     ];
+
+    /**
+     * Boot the model
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (UtilityReading $reading) {
+            // Auto-set the user who recorded this reading
+            if (!$reading->recorded_by) {
+                $reading->recorded_by = auth()->id();
+            }
+            
+            // Auto-get previous reading for same tenant and utility type
+            if (!$reading->previous_reading) {
+                $reading->previous_reading = $reading->getPreviousReading();
+            }
+            
+            // Auto-calculate consumption
+            $reading->consumption = $reading->current_reading - $reading->previous_reading;
+        });
+
+        static::updating(function (UtilityReading $reading) {
+            // Update previous reading if not set
+            if (!$reading->previous_reading) {
+                $reading->previous_reading = $reading->getPreviousReading();
+            }
+            
+            // Recalculate consumption when readings are updated
+            $reading->consumption = $reading->current_reading - $reading->previous_reading;
+        });
+    }
+
+    /**
+     * Get the previous reading for the same tenant and utility type
+     */
+    public function getPreviousReading(): float
+    {
+        $previous = static::where('tenant_id', $this->tenant_id)
+            ->where('utility_type_id', $this->utility_type_id)
+            ->where('id', '!=', $this->id)
+            ->orderBy('reading_date', 'desc')
+            ->first();
+        
+        return $previous ? $previous->current_reading : 0;
+    }
 
     // Relationships
     public function room()
@@ -47,6 +95,11 @@ class UtilityReading extends Model
     public function bill()
     {
         return $this->belongsTo(Bill::class);
+    }
+
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
     }
 
     /**

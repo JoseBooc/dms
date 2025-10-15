@@ -21,7 +21,7 @@ class UtilityReadingResource extends Resource
 
     protected static ?string $navigationGroup = 'Utilities Management';
 
-    protected static ?string $navigationLabel = 'Utility Readings';
+    protected static ?string $navigationLabel = 'Tenant Utilities';
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -35,74 +35,161 @@ class UtilityReadingResource extends Resource
 
     public static function form(Form $form): Form
     {
+        // Always use create form for now to debug
+        return static::createForm($form);
+    }
+
+    public static function createForm(Form $form): Form
+    {
         return $form
             ->schema([
-                Forms\Components\Section::make('Reading Information')
+                Forms\Components\Select::make('tenant_id')
+                    ->relationship('tenant', 'first_name')
+                    ->required()
+                    ->searchable()
+                    ->getOptionLabelFromRecordUsing(function ($record) {
+                        $roomInfo = '';
+                        $roomAssignment = $record->roomAssignments()->where('status', 'active')->first();
+                        if ($roomAssignment && $roomAssignment->room) {
+                            $roomInfo = ' (Room ' . $roomAssignment->room->room_number . ')';
+                        }
+                        return $record->first_name . ' ' . $record->last_name . $roomInfo;
+                    })
+                    ->label('Tenant*')
+                    ->placeholder('Select a tenant')
+                    ->validationAttribute('tenant')
+                    ->columnSpanFull(),
+                
+                Forms\Components\Section::make('Water Reading')
                     ->schema([
-                        Forms\Components\Select::make('room_id')
-                            ->relationship('room', 'room_number')
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('water_price')
+                                    ->label('Price*')
+                                    ->numeric()
+                                    ->step(0.01)
+                                    ->required()
+                                    ->prefix('₱')
+                                    ->placeholder('0.00')
+                                    ->inputMode('decimal'),
+                                
+                                Forms\Components\TextInput::make('water_current_reading')
+                                    ->label('Current Meter Reading*')
+                                    ->numeric()
+                                    ->step(0.01)
+                                    ->required()
+                                    ->suffix('cu. m.')
+                                    ->placeholder('0.00')
+                                    ->inputMode('decimal'),
+                                
+                                Forms\Components\DatePicker::make('water_reading_date')
+                                    ->label('Reading Date*')
+                                    ->required()
+                                    ->default(now()),
+                            ]),
+                        
+                        Forms\Components\Textarea::make('water_notes')
+                            ->label('Notes (Optional)')
+                            ->maxLength(500)
+                            ->rows(2)
+                            ->placeholder('Additional notes for water reading')
+                            ->columnSpanFull(),
+                    ])
+                    ->columnSpanFull()
+                    ->compact(),
+                
+                Forms\Components\Section::make('Electricity Reading')
+                    ->schema([
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('electricity_price')
+                                    ->label('Price*')
+                                    ->numeric()
+                                    ->step(0.01)
+                                    ->required()
+                                    ->prefix('₱')
+                                    ->placeholder('0.00')
+                                    ->inputMode('decimal'),
+                                
+                                Forms\Components\TextInput::make('electricity_current_reading')
+                                    ->label('Current Meter Reading*')
+                                    ->numeric()
+                                    ->step(0.01)
+                                    ->required()
+                                    ->suffix('kWh')
+                                    ->placeholder('0.00')
+                                    ->inputMode('decimal'),
+                                
+                                Forms\Components\DatePicker::make('electricity_reading_date')
+                                    ->label('Reading Date*')
+                                    ->required()
+                                    ->default(now()),
+                            ]),
+                        
+                        Forms\Components\Textarea::make('electricity_notes')
+                            ->label('Notes (Optional)')
+                            ->maxLength(500)
+                            ->rows(2)
+                            ->placeholder('Additional notes for electricity reading')
+                            ->columnSpanFull(),
+                    ])
+                    ->columnSpanFull()
+                    ->compact(),
+            ]);
+    }
+
+    public static function editForm(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\Select::make('tenant_id')
+                            ->relationship('tenant', 'first_name')
                             ->required()
-                            ->searchable(),
+                            ->searchable()
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->first_name . ' ' . $record->last_name)
+                            ->label('Tenant*')
+                            ->disabled(),
                         
                         Forms\Components\Select::make('utility_type_id')
                             ->relationship('utilityType', 'name')
                             ->required()
-                            ->searchable(),
-                        
-                        Forms\Components\DatePicker::make('reading_date')
-                            ->required()
-                            ->default(now()),
-                    ])
-                    ->columns(3),
+                            ->label('Utility Type*')
+                            ->disabled(),
+                    ]),
                 
-                Forms\Components\Section::make('Meter Readings')
+                Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\TextInput::make('previous_reading')
+                        Forms\Components\TextInput::make('price')
+                            ->label('Price*')
                             ->numeric()
                             ->step(0.01)
-                            ->default(0),
+                            ->required()
+                            ->prefix('₱')
+                            ->placeholder('0.00')
+                            ->inputMode('decimal'),
                         
                         Forms\Components\TextInput::make('current_reading')
+                            ->label('Current Meter Reading*')
                             ->numeric()
                             ->step(0.01)
+                            ->required()
+                            ->suffix('units')
+                            ->placeholder('0.00')
+                            ->inputMode('decimal'),
+                        
+                        Forms\Components\DatePicker::make('reading_date')
+                            ->label('Reading Date*')
                             ->required(),
-                        
-                        Forms\Components\TextInput::make('consumption')
-                            ->numeric()
-                            ->step(0.01)
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->reactive()
-                            ->afterStateHydrated(function (Forms\Components\TextInput $component, $state, $record) {
-                                if ($record) {
-                                    $component->state($record->current_reading - $record->previous_reading);
-                                }
-                            })
-                            ->formatStateUsing(function ($state, $get) {
-                                $current = $get('current_reading') ?? 0;
-                                $previous = $get('previous_reading') ?? 0;
-                                return $current - $previous;
-                            }),
-                    ])
-                    ->columns(3),
+                    ]),
                 
-                Forms\Components\Section::make('Additional Information')
-                    ->schema([
-                        Forms\Components\Select::make('recorded_by')
-                            ->relationship('recordedBy', 'name')
-                            ->default(auth()->id())
-                            ->disabled(),
-                        
-                        Forms\Components\Textarea::make('notes')
-                            ->maxLength(500)
-                            ->rows(3),
-                        
-                        Forms\Components\Select::make('bill_id')
-                            ->relationship('bill', 'id')
-                            ->searchable()
-                            ->placeholder('Link to bill (optional)'),
-                    ])
-                    ->columns(2),
+                Forms\Components\Textarea::make('notes')
+                    ->label('Notes (Optional)')
+                    ->maxLength(500)
+                    ->rows(2)
+                    ->placeholder('Additional notes')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -110,56 +197,80 @@ class UtilityReadingResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('tenant.first_name')
+                    ->label('Tenant')
+                    ->formatStateUsing(fn ($record) => $record->tenant ? $record->tenant->first_name . ' ' . $record->tenant->last_name : 'N/A')
+                    ->searchable(['tenant.first_name', 'tenant.last_name'])
+                    ->sortable(),
+                
                 Tables\Columns\TextColumn::make('room.room_number')
                     ->label('Room')
-                    ->searchable()
-                    ->sortable(),
-                
-                Tables\Columns\TextColumn::make('utilityType.name')
-                    ->label('Utility Type')
-                    ->searchable()
-                    ->sortable(),
-                
-                Tables\Columns\TextColumn::make('previous_reading')
-                    ->label('Previous')
-                    ->formatStateUsing(fn ($state) => number_format($state, 2))
-                    ->sortable(),
-                
-                Tables\Columns\TextColumn::make('current_reading')
-                    ->label('Current')
-                    ->formatStateUsing(fn ($state) => number_format($state, 2))
-                    ->sortable(),
-                
-                Tables\Columns\TextColumn::make('consumption')
-                    ->label('Consumption')
-                    ->formatStateUsing(function ($record) {
-                        return number_format($record->current_reading - $record->previous_reading, 2);
-                    })
-                    ->sortable(),
-                
-                Tables\Columns\TextColumn::make('utilityType.unit_of_measurement')
-                    ->label('Unit'),
+                    ->sortable()
+                    ->searchable(),
                 
                 Tables\Columns\TextColumn::make('reading_date')
+                    ->label('Date')
                     ->date()
                     ->sortable(),
                 
-                Tables\Columns\TextColumn::make('recordedBy.name')
-                    ->label('Recorded By'),
-                
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
+                Tables\Columns\TextColumn::make('water_price')
+                    ->label('Water Price')
+                    ->formatStateUsing(function ($record) {
+                        $waterReading = UtilityReading::where('tenant_id', $record->tenant_id)
+                            ->where('reading_date', $record->reading_date)
+                            ->whereHas('utilityType', fn($q) => $q->where('name', 'Water'))
+                            ->first();
+                        return $waterReading ? '₱' . number_format($waterReading->price, 2) : 'N/A';
+                    })
                     ->toggleable(),
+                
+                Tables\Columns\TextColumn::make('water_reading')
+                    ->label('Water Reading')
+                    ->formatStateUsing(function ($record) {
+                        $waterReading = UtilityReading::where('tenant_id', $record->tenant_id)
+                            ->where('reading_date', $record->reading_date)
+                            ->whereHas('utilityType', fn($q) => $q->where('name', 'Water'))
+                            ->first();
+                        if ($waterReading) {
+                            $consumption = $waterReading->current_reading - $waterReading->previous_reading;
+                            return number_format($waterReading->current_reading, 2) . ' cu. m. (' . number_format($consumption, 2) . ')';
+                        }
+                        return 'N/A';
+                    }),
+                
+                Tables\Columns\TextColumn::make('electricity_price')
+                    ->label('Electricity Price')
+                    ->formatStateUsing(function ($record) {
+                        $electricityReading = UtilityReading::where('tenant_id', $record->tenant_id)
+                            ->where('reading_date', $record->reading_date)
+                            ->whereHas('utilityType', fn($q) => $q->where('name', 'Electricity'))
+                            ->first();
+                        return $electricityReading ? '₱' . number_format($electricityReading->price, 2) : 'N/A';
+                    })
+                    ->toggleable(),
+                
+                Tables\Columns\TextColumn::make('electricity_reading')
+                    ->label('Electricity Reading')
+                    ->formatStateUsing(function ($record) {
+                        $electricityReading = UtilityReading::where('tenant_id', $record->tenant_id)
+                            ->where('reading_date', $record->reading_date)
+                            ->whereHas('utilityType', fn($q) => $q->where('name', 'Electricity'))
+                            ->first();
+                        if ($electricityReading) {
+                            $consumption = $electricityReading->current_reading - $electricityReading->previous_reading;
+                            return number_format($electricityReading->current_reading, 2) . ' kWh (' . number_format($consumption, 2) . ')';
+                        }
+                        return 'N/A';
+                    }),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('tenant_id')
+                    ->relationship('tenant', 'first_name')
+                    ->label('Filter by Tenant'),
+                
                 Tables\Filters\SelectFilter::make('utility_type_id')
                     ->relationship('utilityType', 'name')
-                    ->label('Utility Type'),
-                
-                Tables\Filters\SelectFilter::make('room_id')
-                    ->relationship('room', 'room_number')
-                    ->label('Room'),
+                    ->label('Filter by Utility'),
             ])
             ->defaultSort('reading_date', 'desc')
             ->actions([

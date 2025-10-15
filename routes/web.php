@@ -124,7 +124,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/test', function() {
             return view('tenant.test-dashboard');
         })->name('test');
-        Route::get('/dashboard', [\App\Http\Controllers\TenantController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard', function () {
+            return redirect('/dashboard/tenant-dashboard');
+        })->name('dashboard');
         Route::get('/bills', [\App\Http\Controllers\TenantController::class, 'bills'])->name('bills');
         Route::get('/bills/{bill}', [\App\Http\Controllers\TenantController::class, 'showBill'])->name('bills.show');
         

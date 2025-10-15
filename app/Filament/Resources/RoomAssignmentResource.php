@@ -54,9 +54,16 @@ class RoomAssignmentResource extends Resource
                             ]),
                         
                         Forms\Components\Select::make('room_id')
-                            ->relationship('room', 'room_number')
+                            ->relationship(
+                                'room', 
+                                'room_number',
+                                fn ($query) => $query->whereRaw('current_occupants < capacity')
+                                    ->where('status', '!=', 'unavailable')
+                            )
                             ->required()
-                            ->searchable(),
+                            ->searchable()
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->room_number . ' (' . $record->occupancy_display . ')')
+                            ->helperText('Only rooms with available space are shown'),
                         
                         Forms\Components\DatePicker::make('start_date')
                             ->required()

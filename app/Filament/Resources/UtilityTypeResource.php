@@ -25,7 +25,7 @@ class UtilityTypeResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isStaff();
+        return false; // Hidden since we only use Electricity and Water
     }
 
     public static function canViewAny(): bool
@@ -37,42 +37,30 @@ class UtilityTypeResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true),
-                
-                Forms\Components\Select::make('unit')
-                    ->label('Unit of Measurement')
+                Forms\Components\Select::make('name')
+                    ->label('Utility Type')
                     ->options([
-                        'Kilowatt-hour (kWh)' => 'Kilowatt-hour (kWh)',
-                        'kW' => 'kW',
-                        'Cubic meter (m³)' => 'Cubic meter (m³)',
-                        'Gallons' => 'Gallons',
-                        'Cubic foot (ft³)' => 'Cubic foot (ft³)',
-                        'CCF (Centum Cubic Feet)' => 'CCF (Centum Cubic Feet)',
-                        'HCF (Hundred Cubic Feet)' => 'HCF (Hundred Cubic Feet)',
-                        'Therm' => 'Therm',
-                        'Other' => 'Other',
+                        'Electricity' => 'Electricity',
+                        'Water' => 'Water',
                     ])
                     ->required()
+                    ->unique(ignoreRecord: true)
                     ->reactive()
                     ->afterStateUpdated(function (callable $set, $state) {
-                        if ($state !== 'Other') {
-                            $set('custom_unit', null);
+                        // Auto-set appropriate unit based on utility type
+                        if ($state === 'Electricity') {
+                            $set('unit', 'kWh');
+                        } elseif ($state === 'Water') {
+                            $set('unit', 'Cubic meter (m³)');
                         }
-                    })
-                    ->dehydrateStateUsing(function ($state, callable $get) {
-                        return $state === 'Other' ? $get('custom_unit') : $state;
                     }),
                 
-                Forms\Components\TextInput::make('custom_unit')
-                    ->label('Custom Unit of Measurement')
-                    ->maxLength(50)
-                    ->placeholder('e.g., BTU, MCF, etc.')
-                    ->visible(fn (callable $get) => $get('unit') === 'Other')
-                    ->required(fn (callable $get) => $get('unit') === 'Other')
-                    ->dehydrated(false),
+                Forms\Components\TextInput::make('unit')
+                    ->label('Unit of Measurement')
+                    ->required()
+                    ->disabled()
+                    ->dehydrated()
+                    ->helperText('Automatically set based on utility type'),
                 
                 Forms\Components\Textarea::make('description')
                     ->maxLength(500)

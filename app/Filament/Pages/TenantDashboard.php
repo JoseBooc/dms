@@ -19,6 +19,8 @@ class TenantDashboard extends Page
     protected static string $view = 'filament.pages.tenant-dashboard';
     
     protected static ?string $title = 'Home';
+    
+    protected static ?string $slug = 'tenant-dashboard';
 
     public static function canAccess(): bool
     {

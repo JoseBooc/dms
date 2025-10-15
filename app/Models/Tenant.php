@@ -119,6 +119,11 @@ class Tenant extends Model
         return $this->hasMany(Complaint::class, 'tenant_id', 'user_id');
     }
 
+    public function utilityReadings()
+    {
+        return $this->hasMany(UtilityReading::class);
+    }
+
     // Accessors
     public function getNameAttribute()
     {

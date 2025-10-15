@@ -38,22 +38,33 @@ class RoomResource extends Resource
                 Forms\Components\TextInput::make('room_number')
                     ->required()
                     ->unique(ignoreRecord: true)
-                    ->maxLength(10),
+                    ->maxLength(4)
+                    ->rules([
+                        'regex:/^[a-zA-Z0-9]+$/',
+                    ])
+                    ->helperText('Maximum 4 characters, letters and numbers only'),
                 
                 Forms\Components\Select::make('type')
                     ->options([
                         'single' => 'Single',
                         'double' => 'Double',
-                        'triple' => 'Triple',
-                        'quad' => 'Quad',
                     ])
-                    ->required(),
+                    ->required()
+                    ->reactive()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        if ($state === 'single') {
+                            $set('capacity', 1);
+                        } elseif ($state === 'double') {
+                            $set('capacity', 2);
+                        }
+                    }),
                 
                 Forms\Components\TextInput::make('capacity')
                     ->numeric()
                     ->required()
-                    ->minValue(1)
-                    ->maxValue(10),
+                    ->disabled()
+                    ->dehydrated()
+                    ->helperText('Automatically set based on room type'),
                 
                 Forms\Components\TextInput::make('rate')
                     ->numeric()
@@ -65,8 +76,7 @@ class RoomResource extends Resource
                     ->options([
                         'available' => 'Available',
                         'occupied' => 'Occupied',
-                        'maintenance' => 'Under Maintenance',
-                        'reserved' => 'Reserved',
+                        'unavailable' => 'Unavailable',
                     ])
                     ->required()
                     ->default('available'),
@@ -78,7 +88,10 @@ class RoomResource extends Resource
                 Forms\Components\TextInput::make('current_occupants')
                     ->numeric()
                     ->default(0)
-                    ->minValue(0),
+                    ->minValue(0)
+                    ->disabled()
+                    ->dehydrated()
+                    ->helperText('Automatically updated based on active room assignments'),
                 
                 Forms\Components\Toggle::make('hidden')
                     ->default(false),
@@ -97,16 +110,22 @@ class RoomResource extends Resource
                     ->colors([
                         'primary' => 'single',
                         'success' => 'double',
-                        'warning' => 'triple',
-                        'danger' => 'quad',
                     ]),
                 
-                Tables\Columns\TextColumn::make('capacity')
-                    ->sortable(),
-                
-                Tables\Columns\TextColumn::make('current_occupants')
-                    ->sortable()
-                    ->label('Occupants'),
+                Tables\Columns\BadgeColumn::make('occupancy_display')
+                    ->label('Occupancy')
+                    ->sortable(['current_occupants'])
+                    ->colors([
+                        'success' => static function ($state, $record): bool {
+                            return $record->current_occupants == 0;
+                        },
+                        'warning' => static function ($state, $record): bool {
+                            return $record->current_occupants > 0 && !$record->isFullyOccupied();
+                        },
+                        'danger' => static function ($state, $record): bool {
+                            return $record->isFullyOccupied();
+                        },
+                    ]),
                 
                 Tables\Columns\TextColumn::make('rate')
                     ->money('php')
@@ -116,8 +135,7 @@ class RoomResource extends Resource
                     ->colors([
                         'success' => 'available',
                         'warning' => 'occupied',
-                        'danger' => 'maintenance',
-                        'primary' => 'reserved',
+                        'danger' => 'unavailable',
                     ]),
                 
                 Tables\Columns\BooleanColumn::make('hidden'),
@@ -132,16 +150,13 @@ class RoomResource extends Resource
                     ->options([
                         'available' => 'Available',
                         'occupied' => 'Occupied',
-                        'maintenance' => 'Under Maintenance',
-                        'reserved' => 'Reserved',
+                        'unavailable' => 'Unavailable',
                     ]),
                 
                 Tables\Filters\SelectFilter::make('type')
                     ->options([
                         'single' => 'Single',
                         'double' => 'Double',
-                        'triple' => 'Triple',
-                        'quad' => 'Quad',
                     ]),
             ])
             ->actions([

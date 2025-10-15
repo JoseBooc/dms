@@ -83,19 +83,30 @@ class TenantResource extends Resource
                         Forms\Components\TextInput::make('first_name')
                             ->required()
                             ->maxLength(255)
-                            ->rules(['regex:/^[a-zA-Z\s\-\']+$/']),
+                            ->rules([
+                                'regex:/^[a-zA-Z\s\-\']+$/',
+                            ])
+                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
                         
                         Forms\Components\TextInput::make('middle_name')
                             ->maxLength(255)
-                            ->rules(['regex:/^[a-zA-Z\s\-\']+$/']),
+                            ->rules([
+                                'regex:/^[a-zA-Z\s\-\']+$/',
+                            ])
+                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
                         
                         Forms\Components\TextInput::make('last_name')
                             ->required()
                             ->maxLength(255)
-                            ->rules(['regex:/^[a-zA-Z\s\-\']+$/']),
+                            ->rules([
+                                'regex:/^[a-zA-Z\s\-\']+$/',
+                            ])
+                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
                         
                         Forms\Components\DatePicker::make('birth_date')
-                            ->required(),
+                            ->required()
+                            ->maxDate(now()->subYears(18))
+                            ->helperText('You must be at least 18 years old to register.'),
                         
                         Forms\Components\Select::make('gender')
                             ->options([
@@ -106,18 +117,34 @@ class TenantResource extends Resource
                         
                         Forms\Components\TextInput::make('nationality')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->rules([
+                                'regex:/^[a-zA-Z\s\-\']+$/',
+                            ])
+                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
                         
                         Forms\Components\TextInput::make('occupation')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->rules([
+                                'regex:/^[a-zA-Z\s\-\']+$/',
+                            ])
+                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
                         
                         Forms\Components\TextInput::make('school')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->rules([
+                                'regex:/^[a-zA-Z\s\-\']+$/',
+                            ])
+                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
                         
                         Forms\Components\TextInput::make('course')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->rules([
+                                'regex:/^[a-zA-Z\s\-\']+$/',
+                            ])
+                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
                         
                         Forms\Components\Select::make('civil_status')
                             ->options([
