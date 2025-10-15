@@ -8,8 +8,9 @@ use App\Models\UtilityType;
 use App\Models\Tenant;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Database\Eloquent\Model;
 use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class CreateUtilityReading extends CreateRecord
 {
@@ -35,6 +36,25 @@ class CreateUtilityReading extends CreateRecord
         
         if (!$roomAssignment) {
             throw new \Exception('No active room assignment found for this tenant.');
+        }
+
+        // Check for existing readings for the same room and date
+        $existingWaterReading = UtilityReading::where('room_id', $roomAssignment->room_id)
+            ->where('utility_type_id', $waterType->id)
+            ->where('reading_date', $data['water_reading_date'])
+            ->first();
+
+        $existingElectricityReading = UtilityReading::where('room_id', $roomAssignment->room_id)
+            ->where('utility_type_id', $electricityType->id)
+            ->where('reading_date', $data['electricity_reading_date'])
+            ->first();
+
+        if ($existingWaterReading) {
+            throw new \Exception('A water reading already exists for room ' . $roomAssignment->room->room_number . ' on ' . \Carbon\Carbon::parse($data['water_reading_date'])->format('M j, Y') . '. Please use a different date or edit the existing reading.');
+        }
+
+        if ($existingElectricityReading) {
+            throw new \Exception('An electricity reading already exists for room ' . $roomAssignment->room->room_number . ' on ' . \Carbon\Carbon::parse($data['electricity_reading_date'])->format('M j, Y') . '. Please use a different date or edit the existing reading.');
         }
 
         // Create water reading
