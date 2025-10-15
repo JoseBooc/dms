@@ -36,7 +36,7 @@
                                 </div>
                                 <div class="ml-3">
                                     <h4 class="text-lg font-semibold text-gray-900">{{ $utilityType->name }}</h4>
-                                    <p class="text-sm text-gray-600">{{ $utilityType->unit }}</p>
+                                    <p class="text-sm text-gray-600">{!! $utilityType->unit !!}</p>
                                 </div>
                             </div>
                             
@@ -44,7 +44,7 @@
                                 <div>
                                     <p class="text-sm text-gray-600">Latest Reading</p>
                                     <p class="text-xl font-bold text-gray-900">
-                                        {{ $latestReading ? number_format($latestReading->current_reading, 2) : 'N/A' }} {{ $utilityType->unit }}
+                                        {{ $latestReading ? number_format($latestReading->current_reading, 2) : 'N/A' }} {!! $utilityType->unit !!}
                                     </p>
                                     @if($latestReading)
                                         <p class="text-xs text-gray-500">{{ $latestReading->reading_date->format('M j, Y') }}</p>
@@ -54,7 +54,7 @@
                                 <div>
                                     <p class="text-sm text-gray-600">Monthly Consumption</p>
                                     <p class="text-lg font-semibold {{ $consumption > 0 ? 'text-red-600' : 'text-gray-900' }}">
-                                        {{ $consumption > 0 ? number_format($consumption, 2) : '0.00' }} {{ $utilityType->unit }}
+                                        {{ $consumption > 0 ? number_format($consumption, 2) : '0.00' }} {!! $utilityType->unit !!}
                                     </p>
                                 </div>
                                 
@@ -114,7 +114,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-medium text-gray-900">{{ $reading->utilityType->name }}</div>
-                                            <div class="text-sm text-gray-500">{{ $reading->utilityType->unit }}</div>
+                                            <div class="text-sm text-gray-500">{!! $reading->utilityType->unit !!}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                                             {{ number_format($reading->current_reading, 2) }}

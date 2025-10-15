@@ -22,6 +22,11 @@ class TenantDashboard extends Page
     
     protected static ?string $slug = 'tenant-dashboard';
 
+    public $stats = [];
+    public $currentAssignment;
+    public $recentBills;
+    public $maintenanceRequests;
+
     public static function canAccess(): bool
     {
         return Auth::user()?->role === 'tenant';
@@ -30,6 +35,15 @@ class TenantDashboard extends Page
     public static function shouldRegisterNavigation(): bool
     {
         return Auth::user()?->role === 'tenant';
+    }
+
+    public function mount(): void
+    {
+        $data = $this->getViewData();
+        $this->stats = $data['stats'];
+        $this->currentAssignment = $data['currentAssignment'];
+        $this->recentBills = $data['recentBills'];
+        $this->maintenanceRequests = $data['maintenanceRequests'];
     }
 
     public function getViewData(): array
@@ -52,8 +66,8 @@ class TenantDashboard extends Page
             ->with('room')
             ->first();
 
-        // Get recent bills
-        $recentBills = Bill::where('tenant_id', $tenant->id)
+        // Get recent bills (bills reference user_id, not tenant_id)
+        $recentBills = Bill::where('tenant_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
@@ -65,10 +79,10 @@ class TenantDashboard extends Page
             ->take(5)
             ->get();
 
-        // Calculate stats
+        // Calculate stats (bills use user_id, maintenance uses tenant_id)
         $stats = [
-            'total_bills' => Bill::where('tenant_id', $tenant->id)->count(),
-            'unpaid_bills' => Bill::where('tenant_id', $tenant->id)->where('status', '!=', 'paid')->count(),
+            'total_bills' => Bill::where('tenant_id', $user->id)->count(),
+            'unpaid_bills' => Bill::where('tenant_id', $user->id)->where('status', '!=', 'paid')->count(),
             'pending_maintenance' => $maintenanceRequests->count(),
         ];
 

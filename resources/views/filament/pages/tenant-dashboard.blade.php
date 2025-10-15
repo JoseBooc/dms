@@ -17,7 +17,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-blue-900">Total Bills</p>
-                        <p class="text-2xl font-bold text-blue-900">{{ $this->getViewData()['stats']['total_bills'] ?? 0 }}</p>
+                        <p class="text-2xl font-bold text-blue-900">{{ $stats['total_bills'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
@@ -31,7 +31,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-red-900">Unpaid Bills</p>
-                        <p class="text-2xl font-bold text-red-900">{{ $this->getViewData()['stats']['unpaid_bills'] ?? 0 }}</p>
+                        <p class="text-2xl font-bold text-red-900">{{ $stats['unpaid_bills'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
@@ -45,24 +45,24 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-yellow-900">Pending Maintenance</p>
-                        <p class="text-2xl font-bold text-yellow-900">{{ $this->getViewData()['stats']['pending_maintenance'] ?? 0 }}</p>
+                        <p class="text-2xl font-bold text-yellow-900">{{ $stats['pending_maintenance'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Current Room Assignment -->
-        @if($this->getViewData()['currentAssignment'])
+        @if($currentAssignment)
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Current Room Assignment</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <p class="text-sm text-gray-600">Room Number</p>
-                        <p class="text-lg font-semibold">{{ $this->getViewData()['currentAssignment']->room->room_number ?? 'N/A' }}</p>
+                        <p class="text-lg font-semibold">{{ $currentAssignment->room->room_number ?? 'N/A' }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Monthly Rent</p>
-                        <p class="text-lg font-semibold">₱{{ number_format($this->getViewData()['currentAssignment']->monthly_rent ?? 0, 2) }}</p>
+                        <p class="text-lg font-semibold">₱{{ number_format($currentAssignment->monthly_rent ?? 0, 2) }}</p>
                     </div>
                 </div>
             </div>
@@ -76,9 +76,9 @@
                     <h3 class="text-lg font-semibold text-gray-900">Recent Bills</h3>
                     <a href="{{ url('/dashboard/tenant-bill-resources') }}" class="text-blue-600 hover:text-blue-500 text-sm font-medium">View All</a>
                 </div>
-                @if($this->getViewData()['recentBills']->count() > 0)
+                @if($recentBills->count() > 0)
                     <div class="space-y-3">
-                        @foreach($this->getViewData()['recentBills']->take(3) as $bill)
+                        @foreach($recentBills->take(3) as $bill)
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
                                 <div>
                                     <p class="font-medium">₱{{ number_format($bill->total_amount, 2) }}</p>
@@ -101,9 +101,9 @@
             <!-- Pending Maintenance -->
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Pending Maintenance</h3>
-                @if($this->getViewData()['maintenanceRequests']->count() > 0)
+                @if($maintenanceRequests->count() > 0)
                     <div class="space-y-3">
-                        @foreach($this->getViewData()['maintenanceRequests']->take(3) as $request)
+                        @foreach($maintenanceRequests->take(3) as $request)
                             <div class="p-3 bg-gray-50 rounded">
                                 <p class="font-medium">{{ $request->title ?? 'Maintenance Request' }}</p>
                                 <p class="text-sm text-gray-600">{{ $request->created_at->format('M j, Y') }}</p>
