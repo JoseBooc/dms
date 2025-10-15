@@ -29,7 +29,7 @@ class UtilityTypeSeeder extends Seeder
         UtilityType::updateOrCreate(
             ['name' => 'Water'],
             [
-                'unit' => 'cu. m.',
+                'unit' => 'm³',
                 'description' => 'Water consumption measurement',
                 'status' => 'active'
             ]

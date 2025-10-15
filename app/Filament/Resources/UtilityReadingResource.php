@@ -78,7 +78,7 @@ class UtilityReadingResource extends Resource
                                     ->numeric()
                                     ->step(0.01)
                                     ->required()
-                                    ->suffix('cu. m.')
+                                    ->suffix('m³')
                                     ->placeholder('0.00')
                                     ->inputMode('decimal'),
                                 
@@ -233,7 +233,7 @@ class UtilityReadingResource extends Resource
                             ->first();
                         if ($waterReading) {
                             $consumption = $waterReading->current_reading - $waterReading->previous_reading;
-                            return number_format($waterReading->current_reading, 2) . ' cu. m. (' . number_format($consumption, 2) . ')';
+                            return number_format($waterReading->current_reading, 2) . ' m³ (' . number_format($consumption, 2) . ')';
                         }
                         return 'N/A';
                     }),
