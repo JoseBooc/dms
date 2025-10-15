@@ -26,6 +26,7 @@ class TenantDashboard extends Page
     public $currentAssignment;
     public $recentBills;
     public $maintenanceRequests;
+    public $maintenanceStats = [];
 
     public static function canAccess(): bool
     {
@@ -44,6 +45,7 @@ class TenantDashboard extends Page
         $this->currentAssignment = $data['currentAssignment'];
         $this->recentBills = $data['recentBills'];
         $this->maintenanceRequests = $data['maintenanceRequests'];
+        $this->maintenanceStats = $data['maintenanceStats'];
     }
 
     public function getViewData(): array
@@ -86,18 +88,27 @@ class TenantDashboard extends Page
             'pending_maintenance' => $maintenanceRequests->count(),
         ];
 
+        // Calculate maintenance stats for overview cards
+        $maintenanceStats = [
+            'total_requests' => MaintenanceRequest::where('tenant_id', $tenant->id)->count(),
+            'pending_requests' => MaintenanceRequest::where('tenant_id', $tenant->id)->where('status', 'pending')->count(),
+            'in_progress_requests' => MaintenanceRequest::where('tenant_id', $tenant->id)->where('status', 'in_progress')->count(),
+            'completed_requests' => MaintenanceRequest::where('tenant_id', $tenant->id)->where('status', 'completed')->count(),
+        ];
+
         return [
             'currentAssignment' => $currentAssignment,
             'recentBills' => $recentBills,
             'maintenanceRequests' => $maintenanceRequests,
-            'stats' => $stats
+            'stats' => $stats,
+            'maintenanceStats' => $maintenanceStats
         ];
     }
 
     protected function getHeaderWidgets(): array
     {
         return [
-            \App\Filament\Widgets\TenantMaintenanceOverview::class,
+            // Moved to main content area
         ];
     }
 }

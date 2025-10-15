@@ -6,6 +6,69 @@
             <p class="text-gray-600">Here's an overview of your tenancy information.</p>
         </div>
 
+        <!-- Maintenance Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v6a2 2 0 002 2h2m0 0h6a2 2 0 002-2V7a2 2 0 00-2-2h-2m0 0V3a2 2 0 00-2-2H9a2 2 0 00-2 2v2z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-blue-900">Total Requests</p>
+                        <p class="text-2xl font-bold text-blue-900">{{ $maintenanceStats['total_requests'] ?? 0 }}</p>
+                        <p class="text-xs text-blue-700">All maintenance requests</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 rounded-lg p-6 border border-yellow-200">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-yellow-900">Pending</p>
+                        <p class="text-2xl font-bold text-yellow-900">{{ $maintenanceStats['pending_requests'] ?? 0 }}</p>
+                        <p class="text-xs text-yellow-700">Awaiting review</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-purple-50 rounded-lg p-6 border border-purple-200">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 011-1h1a2 2 0 100-4H7a1 1 0 01-1-1V8a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-purple-900">In Progress</p>
+                        <p class="text-2xl font-bold text-purple-900">{{ $maintenanceStats['in_progress_requests'] ?? 0 }}</p>
+                        <p class="text-xs text-purple-700">Currently being worked on</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-green-50 rounded-lg p-6 border border-green-200">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-green-900">Completed</p>
+                        <p class="text-2xl font-bold text-green-900">{{ $maintenanceStats['completed_requests'] ?? 0 }}</p>
+                        <p class="text-xs text-green-700">Finished repairs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Stats Overview -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-blue-50 rounded-lg p-6 border border-blue-200">
