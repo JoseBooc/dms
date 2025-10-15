@@ -23,7 +23,9 @@ class ComplaintResource extends Resource
 
     protected static ?string $navigationGroup = 'Operations';
 
-    protected static ?string $navigationLabel = 'Complaints';
+    protected static ?string $navigationLabel = 'All Complaints';
+
+    protected static ?string $slug = 'admin-complaints';
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -33,6 +35,13 @@ class ComplaintResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()->isAdmin() || auth()->user()->isStaff();
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = Complaint::query();
+        \Log::info('Admin Complaint query count: ' . $query->count());
+        return $query;
     }
 
     public static function form(Form $form): Form
@@ -118,59 +127,44 @@ class ComplaintResource extends Resource
 
     public static function table(Table $table): Table
     {
+        \Log::info('Admin ComplaintResource table method called');
+        
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
                     ->sortable(),
-                    
-                Tables\Columns\TextColumn::make('tenant.name')
+                Tables\Columns\TextColumn::make('tenant.first_name')
                     ->label('Tenant')
-                    ->searchable()
-                    ->sortable(),
-                    
+                    ->formatStateUsing(fn ($record) => $record->tenant ? 
+                        $record->tenant->first_name . ' ' . $record->tenant->last_name : 'Unknown'),
                 Tables\Columns\TextColumn::make('room.room_number')
                     ->label('Room')
                     ->sortable(),
-                    
                 Tables\Columns\TextColumn::make('title')
-                    ->searchable()
-                    ->limit(30),
-                    
-                Tables\Columns\BadgeColumn::make('category')
-                    ->colors([
-                        'secondary' => 'other',
-                        'warning' => 'noise',
-                        'danger' => 'maintenance',
-                        'primary' => 'facilities',
-                        'success' => 'staff',
-                        'info' => 'security',
-                        'gray' => 'cleanliness',
-                    ]),
-                    
-                Tables\Columns\BadgeColumn::make('priority')
-                    ->colors([
-                        'secondary' => 'low',
-                        'warning' => 'medium',
-                        'danger' => 'high',
-                        'primary' => 'urgent',
-                    ]),
-                    
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'warning' => 'pending',
-                        'primary' => 'investigating',
-                        'success' => 'resolved',
-                        'secondary' => 'closed',
-                    ]),
-                    
-                Tables\Columns\TextColumn::make('assignedTo.name')
-                    ->label('Assigned To')
-                    ->default('Unassigned'),
-                    
+                    ->label('Title')
+                    ->limit(40),
+                Tables\Columns\TextColumn::make('category')
+                    ->label('Category')
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'noise' => 'Noise',
+                        'cleanliness' => 'Cleanliness',
+                        'behavior' => 'Behavior',
+                        'facilities' => 'Facilities',
+                        'safety' => 'Safety',
+                        'billing' => 'Billing',
+                        'other' => 'Other',
+                        default => ucfirst($state),
+                    }),
+                Tables\Columns\TextColumn::make('priority')
+                    ->label('Priority')
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->formatStateUsing(fn ($state) => ucwords(str_replace('_', ' ', $state))),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Submitted')
                     ->dateTime()
+                    ->label('Submitted')
                     ->sortable(),
             ])
             ->filters([

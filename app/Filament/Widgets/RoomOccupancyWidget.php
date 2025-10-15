@@ -30,32 +30,32 @@ class RoomOccupancyWidget extends BaseWidget
         return [
             Card::make('Total Rooms', $totalRooms)
                 ->description('Total number of rooms')
-                ->descriptionIcon('heroicon-s-office-building')
+                ->descriptionIcon('heroicon-o-home')
                 ->color('primary'),
                 
             Card::make('Occupied Rooms', $occupiedRooms)
                 ->description('Currently occupied')
-                ->descriptionIcon('heroicon-s-users')
+                ->descriptionIcon('heroicon-o-users')
                 ->color('success'),
                 
             Card::make('Available Rooms', $availableRooms)
                 ->description('Ready for assignment')
-                ->descriptionIcon('heroicon-s-check-circle')
+                ->descriptionIcon('heroicon-o-check-circle')
                 ->color('warning'),
                 
             Card::make('Occupancy Rate', $occupancyRate . '%')
                 ->description('Current occupancy percentage')
-                ->descriptionIcon('heroicon-s-chart-bar')
+                ->descriptionIcon('heroicon-o-chart-bar')
                 ->color($occupancyRate > 80 ? 'success' : ($occupancyRate > 60 ? 'warning' : 'danger')),
                 
             Card::make('Total Tenants', $totalTenants)
                 ->description('Registered tenants')
-                ->descriptionIcon('heroicon-s-users')
+                ->descriptionIcon('heroicon-o-users')
                 ->color('info'),
                 
             Card::make('Monthly Revenue', '₱' . number_format($monthlyRevenue, 2))
                 ->description('Revenue this month')
-                ->descriptionIcon('heroicon-s-cash')
+                ->descriptionIcon('heroicon-o-cash')
                 ->color('success'),
         ];
     }

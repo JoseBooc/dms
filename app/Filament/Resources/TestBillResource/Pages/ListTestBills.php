@@ -1,14 +1,16 @@
 <?php
 
-namespace App\Filament\Resources\BillResource\Pages;
+namespace App\Filament\Resources\TestBillResource\Pages;
 
-use App\Filament\Resources\BillResource;
+use App\Filament\Resources\TestBillResource;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 
-class ListBills extends ListRecords
+class ListTestBills extends ListRecords
 {
-    protected static string $resource = BillResource::class;
+    protected static string $resource = TestBillResource::class;
+
+    protected ?string $heading = 'Billing';
 
     protected function getActions(): array
     {
@@ -22,7 +24,7 @@ class ListBills extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Create New Bill'),
+                ->label('New Bill'),
         ];
     }
 }

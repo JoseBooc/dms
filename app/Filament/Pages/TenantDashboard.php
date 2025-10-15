@@ -27,6 +27,11 @@ class TenantDashboard extends Page
         return Auth::user()?->role === 'tenant';
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()?->role === 'tenant';
+    }
+
     public function getViewData(): array
     {
         $user = Auth::user();
@@ -72,6 +77,13 @@ class TenantDashboard extends Page
             'recentBills' => $recentBills,
             'maintenanceRequests' => $maintenanceRequests,
             'stats' => $stats
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Widgets\TenantMaintenanceOverview::class,
         ];
     }
 }

@@ -11,16 +11,32 @@ use App\Models\MaintenanceRequest;
 
 class Dashboard extends Page
 {
-    protected static bool $shouldRegisterNavigation = false;
-
     protected static string $view = 'filament.pages.dashboard';
     
     protected static ?string $title = 'Dashboard';
+
+    protected static ?string $navigationIcon = 'heroicon-o-home';
+
+    protected static ?int $navigationSort = 1;
 
     public static function canAccess(): bool
     {
         $user = Auth::user();
         return $user && in_array($user->role, ['admin', 'staff']);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = Auth::user();
+        return $user && in_array($user->role, ['admin', 'staff']);
+    }
+
+    public function mount(): void
+    {
+        // Redirect tenants to their home page
+        if (Auth::user()?->role === 'tenant') {
+            redirect('/dashboard/tenant-dashboard');
+        }
     }
 
     public function getViewData(): array

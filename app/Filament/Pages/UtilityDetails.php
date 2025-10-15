@@ -27,6 +27,11 @@ class UtilityDetails extends Page
         return Auth::user()?->role === 'tenant';
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()?->role === 'tenant';
+    }
+
     public function getViewData(): array
     {
         $user = Auth::user();
@@ -57,13 +62,16 @@ class UtilityDetails extends Page
         // Get all utility types
         $utilityTypes = UtilityType::where('status', 'active')->get();
 
-        // Get latest utility readings for this room
+        // Get latest utility readings for this room - improved query
         $utilityReadings = UtilityReading::where('room_id', $currentAssignment->room_id)
             ->with('utilityType')
             ->orderBy('reading_date', 'desc')
-            ->take(10)
+            ->orderBy('created_at', 'desc')
             ->get()
-            ->groupBy('utility_type_id');
+            ->groupBy('utility_type_id')
+            ->map(function ($readings) {
+                return $readings->take(5); // Keep last 5 readings per utility type
+            });
 
         return [
             'currentAssignment' => $currentAssignment,
