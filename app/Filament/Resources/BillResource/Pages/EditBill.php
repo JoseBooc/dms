@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\TestBillResource\Pages;
+namespace App\Filament\Resources\BillResource\Pages;
 
-use App\Filament\Resources\TestBillResource;
+use App\Filament\Resources\BillResource;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditTestBill extends EditRecord
+class EditBill extends EditRecord
 {
-    protected static string $resource = TestBillResource::class;
+    protected static string $resource = BillResource::class;
 
     protected ?string $heading = 'Edit Bill';
 

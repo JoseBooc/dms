@@ -10,6 +10,8 @@ class ListBills extends ListRecords
 {
     protected static string $resource = BillResource::class;
 
+    protected ?string $heading = 'Billing';
+
     protected function getActions(): array
     {
         return [
@@ -22,7 +24,7 @@ class ListBills extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Create New Bill'),
+                ->label('New Bill'),
         ];
     }
 }
