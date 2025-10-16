@@ -123,6 +123,7 @@ class UserResource extends Resource
                                     'other' => 'Other',
                                 ];
                             })
+                            ->required()
                             ->default(function (callable $get, string $context, $record = null) {
                                 $role = $get('role') ?? ($record->role ?? null);
                                 return $role === 'tenant' ? 'female' : null;

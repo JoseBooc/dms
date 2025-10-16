@@ -128,7 +128,7 @@ class RoomResource extends Resource
                     ]),
                 
                 Tables\Columns\TextColumn::make('rate')
-                    ->money('php')
+                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
                     ->sortable(),
                 
                 Tables\Columns\BadgeColumn::make('status')

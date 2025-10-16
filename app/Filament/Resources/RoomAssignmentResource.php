@@ -116,7 +116,7 @@ class RoomAssignmentResource extends Resource
                     ->sortable(),
                 
                 Tables\Columns\TextColumn::make('monthly_rent')
-                    ->money('php')
+                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
                     ->sortable(),
                 
                 Tables\Columns\TextColumn::make('start_date')

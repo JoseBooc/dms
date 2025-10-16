@@ -211,20 +211,25 @@ class BillResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Total Amount')
-                    ->money('php')
+                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('amount_paid')
                     ->label('Amount Paid')
-                    ->money('php')
+                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
                     ->sortable(),
-                Tables\Columns\TextColumn::make('status')
+                Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
                     ->formatStateUsing(fn ($state) => match ($state) {
-                        'unpaid' => 'Unpaid',
-                        'partially_paid' => 'Partially Paid',
-                        'paid' => 'Paid',
-                        default => ucfirst($state),
-                    }),
+                        'unpaid' => 'unpaid',
+                        'partially_paid' => 'partially paid',
+                        'paid' => 'paid',
+                        default => strtolower($state),
+                    })
+                    ->colors([
+                        'danger' => 'unpaid',
+                        'warning' => 'partially_paid',
+                        'success' => 'paid',
+                    ]),
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('Due Date')
                     ->date()
