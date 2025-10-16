@@ -11,7 +11,6 @@ use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UtilityReadingResource extends Resource
 {
@@ -43,29 +42,38 @@ class UtilityReadingResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('tenant_id')
-                    ->relationship('tenant', 'first_name')
+                Forms\Components\Select::make('room_id')
+                    ->relationship('room', 'room_number')
                     ->required()
                     ->searchable()
                     ->getOptionLabelFromRecordUsing(function ($record) {
-                        $roomInfo = '';
-                        $roomAssignment = $record->roomAssignments()->where('status', 'active')->first();
-                        if ($roomAssignment && $roomAssignment->room) {
-                            $roomInfo = ' (Room ' . $roomAssignment->room->room_number . ')';
+                        $tenantInfo = '';
+                        $activeAssignments = $record->assignments()->where('status', 'active')->with('tenant')->get();
+                        if ($activeAssignments->count() > 0) {
+                            $tenantNames = $activeAssignments->map(function ($assignment) {
+                                return $assignment->tenant->first_name . ' ' . $assignment->tenant->last_name;
+                            })->join(', ');
+                            $tenantInfo = ' (' . $tenantNames . ')';
                         }
-                        return $record->first_name . ' ' . $record->last_name . $roomInfo;
+                        return $record->room_number . $tenantInfo;
                     })
-                    ->label('Tenant*')
-                    ->placeholder('Select a tenant')
-                    ->validationAttribute('tenant')
+                    ->label('Room')
+                    ->placeholder('Select a room')
+                    ->validationAttribute('room')
+                    ->columnSpanFull(),
+                
+                Forms\Components\DatePicker::make('reading_date')
+                    ->label('Reading Date')
+                    ->required()
+                    ->default(now())
                     ->columnSpanFull(),
                 
                 Forms\Components\Section::make('Water Reading')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('water_price')
-                                    ->label('Price*')
+                                    ->label('Price')
                                     ->numeric()
                                     ->step(0.01)
                                     ->required()
@@ -74,18 +82,13 @@ class UtilityReadingResource extends Resource
                                     ->inputMode('decimal'),
                                 
                                 Forms\Components\TextInput::make('water_current_reading')
-                                    ->label('Current Meter Reading*')
+                                    ->label('Current Meter Reading')
                                     ->numeric()
                                     ->step(0.01)
                                     ->required()
-                                    ->suffix('cu. m.')
+                                    ->suffix('m³')
                                     ->placeholder('0.00')
                                     ->inputMode('decimal'),
-                                
-                                Forms\Components\DatePicker::make('water_reading_date')
-                                    ->label('Reading Date*')
-                                    ->required()
-                                    ->default(now()),
                             ]),
                         
                         Forms\Components\Textarea::make('water_notes')
@@ -100,10 +103,10 @@ class UtilityReadingResource extends Resource
                 
                 Forms\Components\Section::make('Electricity Reading')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('electricity_price')
-                                    ->label('Price*')
+                                    ->label('Price')
                                     ->numeric()
                                     ->step(0.01)
                                     ->required()
@@ -112,18 +115,13 @@ class UtilityReadingResource extends Resource
                                     ->inputMode('decimal'),
                                 
                                 Forms\Components\TextInput::make('electricity_current_reading')
-                                    ->label('Current Meter Reading*')
+                                    ->label('Current Meter Reading')
                                     ->numeric()
                                     ->step(0.01)
                                     ->required()
                                     ->suffix('kWh')
                                     ->placeholder('0.00')
                                     ->inputMode('decimal'),
-                                
-                                Forms\Components\DatePicker::make('electricity_reading_date')
-                                    ->label('Reading Date*')
-                                    ->required()
-                                    ->default(now()),
                             ]),
                         
                         Forms\Components\Textarea::make('electricity_notes')
@@ -233,7 +231,7 @@ class UtilityReadingResource extends Resource
                             ->first();
                         if ($waterReading) {
                             $consumption = $waterReading->current_reading - $waterReading->previous_reading;
-                            return number_format($waterReading->current_reading, 2) . ' cu. m. (' . number_format($consumption, 2) . ')';
+                            return number_format($waterReading->current_reading, 2) . ' m³ (' . number_format($consumption, 2) . ')';
                         }
                         return 'N/A';
                     }),
@@ -275,9 +273,47 @@ class UtilityReadingResource extends Resource
             ->defaultSort('reading_date', 'desc')
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->action(function (UtilityReading $record) {
+                        // Delete both water and electricity readings for the same room and date
+                        $relatedReadings = UtilityReading::where('room_id', $record->room_id)
+                            ->where('reading_date', $record->reading_date)
+                            ->get();
+                        
+                        foreach ($relatedReadings as $reading) {
+                            $reading->delete(); // Hard delete
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Delete Utility Reading')
+                    ->modalSubheading('This will permanently delete both water and electricity readings for this room and date.')
+                    ->modalButton('Delete Reading'),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\DeleteBulkAction::make()
+                    ->action(function ($records) {
+                        $processedDates = [];
+                        
+                        foreach ($records as $record) {
+                            $key = $record->room_id . '-' . $record->reading_date->format('Y-m-d');
+                            
+                            if (!in_array($key, $processedDates)) {
+                                // Delete both water and electricity readings for this room and date
+                                $relatedReadings = UtilityReading::where('room_id', $record->room_id)
+                                    ->where('reading_date', $record->reading_date)
+                                    ->get();
+                                
+                                foreach ($relatedReadings as $reading) {
+                                    $reading->delete(); // Hard delete
+                                }
+                                
+                                $processedDates[] = $key;
+                            }
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Delete Selected Utility Readings')
+                    ->modalSubheading('This will permanently delete both water and electricity readings for the selected room dates.'),
             ]);
     }
     

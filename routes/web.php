@@ -25,6 +25,19 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
+// Redirect tenants from main dashboard to their home page
+Route::get('/dashboard', function () {
+    if (auth()->check()) {
+        $user = auth()->user();
+        if ($user->role === 'tenant') {
+            return redirect('/dashboard/tenant-dashboard');
+        }
+        // For admin/staff, let Filament handle the dashboard
+        return redirect('/dashboard/dashboard');
+    }
+    return redirect('/login');
+})->middleware('auth');
+
 // Redirect non-Filament login to Filament login
 Route::get('/login', function () {
     return redirect('/dashboard/login');

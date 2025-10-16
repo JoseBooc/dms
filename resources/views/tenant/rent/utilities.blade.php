@@ -87,14 +87,14 @@
                                         <div class="flex justify-between items-center">
                                             <span class="text-sm text-gray-600">Current Reading:</span>
                                             <span class="text-lg font-bold text-gray-900">
-                                                {{ number_format($reading->reading_value, 2) }} {{ $utilityType->unit }}
+                                                {{ number_format($reading->reading_value, 2) }} {!! $utilityType->unit !!}
                                             </span>
                                         </div>
 
                                         <div class="flex justify-between items-center">
                                             <span class="text-sm text-gray-600">Previous Reading:</span>
                                             <span class="text-sm font-medium text-gray-700">
-                                                {{ $reading->previous_reading ? number_format($reading->previous_reading, 2) : 'N/A' }} {{ $utilityType->unit }}
+                                                {{ $reading->previous_reading ? number_format($reading->previous_reading, 2) : 'N/A' }} {!! $utilityType->unit !!}
                                             </span>
                                         </div>
 
@@ -102,7 +102,7 @@
                                             <div class="flex justify-between items-center">
                                                 <span class="text-sm text-gray-600">Consumption:</span>
                                                 <span class="text-sm font-medium {{ ($reading->reading_value - $reading->previous_reading) > 0 ? 'text-red-600' : 'text-green-600' }}">
-                                                    {{ number_format($reading->reading_value - $reading->previous_reading, 2) }} {{ $utilityType->unit }}
+                                                    {{ number_format($reading->reading_value - $reading->previous_reading, 2) }} {!! $utilityType->unit !!}
                                                 </span>
                                             </div>
                                         @endif
@@ -172,15 +172,15 @@
                                             {{ $reading->utilityType->name }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ number_format($reading->reading_value, 2) }} {{ $reading->utilityType->unit }}
+                                            {{ number_format($reading->reading_value, 2) }} {!! $reading->utilityType->unit !!}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $reading->previous_reading ? number_format($reading->previous_reading, 2) : 'N/A' }} {{ $reading->utilityType->unit }}
+                                            {{ $reading->previous_reading ? number_format($reading->previous_reading, 2) : 'N/A' }} {!! $reading->utilityType->unit !!}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             @if($reading->previous_reading)
                                                 <span class="{{ ($reading->reading_value - $reading->previous_reading) > 0 ? 'text-red-600' : 'text-green-600' }}">
-                                                    {{ number_format($reading->reading_value - $reading->previous_reading, 2) }} {{ $reading->utilityType->unit }}
+                                                    {{ number_format($reading->reading_value - $reading->previous_reading, 2) }} {!! $reading->utilityType->unit !!}
                                                 </span>
                                             @else
                                                 <span class="text-gray-400">N/A</span>

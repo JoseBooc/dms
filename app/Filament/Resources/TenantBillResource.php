@@ -29,16 +29,20 @@ class TenantBillResource extends Resource
         return Auth::user()?->role === 'tenant';
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()?->role === 'tenant';
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        $tenant = $user->tenant;
         
-        if (!$tenant) {
+        if ($user->role !== 'tenant') {
             return parent::getEloquentQuery()->whereRaw('1 = 0');
         }
         
-        return parent::getEloquentQuery()->where('tenant_id', $tenant->id);
+        return parent::getEloquentQuery()->where('tenant_id', $user->id);
     }
 
     public static function form(Form $form): Form
@@ -92,14 +96,14 @@ class TenantBillResource extends Resource
                     ->label('Amount Paid')
                     ->prefix('₱')
                     ->default('0.00'),
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('Status')
-                    ->colors([
-                        'success' => 'paid',
-                        'warning' => 'partially_paid',
-                        'danger' => 'unpaid',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => ucfirst(str_replace('_', ' ', $state))),
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'unpaid' => 'Unpaid',
+                        'partially_paid' => 'Partially Paid', 
+                        'paid' => 'Paid',
+                        default => ucfirst(str_replace('_', ' ', $state)),
+                    }),
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('Due Date')
                     ->date('M j, Y')

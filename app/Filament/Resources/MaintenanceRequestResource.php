@@ -21,7 +21,9 @@ class MaintenanceRequestResource extends Resource
 
     protected static ?string $navigationGroup = 'Operations';
 
-    protected static ?string $navigationLabel = 'Maintenance Requests';
+    protected static ?string $navigationLabel = 'All Maintenance Requests';
+
+    protected static ?string $slug = 'admin-maintenance-requests';
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -31,6 +33,13 @@ class MaintenanceRequestResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()->isAdmin() || auth()->user()->isStaff();
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = MaintenanceRequest::query();
+        \Log::info('Admin MaintenanceRequest query count: ' . $query->count());
+        return $query;
     }
 
     public static function form(Form $form): Form
@@ -105,56 +114,35 @@ class MaintenanceRequestResource extends Resource
 
     public static function table(Table $table): Table
     {
+        \Log::info('ADMIN MaintenanceRequestResource table method called');
+        
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('Request #')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('tenant.first_name')
                     ->label('Tenant')
-                    ->searchable()
-                    ->sortable()
-                    ->formatStateUsing(fn ($record) => $record->tenant->first_name . ' ' . $record->tenant->last_name),
-                
+                    ->formatStateUsing(fn ($record) => $record->tenant ? 
+                        $record->tenant->first_name . ' ' . $record->tenant->last_name : 'Unknown'),
                 Tables\Columns\TextColumn::make('room.room_number')
                     ->label('Room')
-                    ->searchable()
                     ->sortable(),
-                
                 Tables\Columns\TextColumn::make('area')
-                    ->searchable(),
-                
+                    ->label('Area'),
                 Tables\Columns\TextColumn::make('description')
-                    ->limit(50)
-                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
-                        $state = $column->getState();
-                        if (strlen($state) <= 50) {
-                            return null;
-                        }
-                        return $state;
-                    }),
-                
-                Tables\Columns\BadgeColumn::make('priority')
-                    ->colors([
-                        'secondary' => 'low',
-                        'warning' => 'medium',
-                        'danger' => 'high',
-                        'danger' => 'urgent',
-                    ]),
-                
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'warning' => 'pending',
-                        'primary' => 'in_progress',
-                        'success' => 'completed',
-                        'secondary' => 'cancelled',
-                    ]),
-                
-                Tables\Columns\TextColumn::make('assignee.name')
-                    ->label('Assigned To')
-                    ->formatStateUsing(fn ($state) => $state ?? 'Not assigned'),
-                
+                    ->label('Description')
+                    ->limit(50),
+                Tables\Columns\TextColumn::make('priority')
+                    ->label('Priority')
+                    ->formatStateUsing(fn ($state) => $state ? ucfirst($state) : ''),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->formatStateUsing(fn ($state) => $state ? ucwords(str_replace('_', ' ', $state)) : ''),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
-                    ->label('Requested'),
+                    ->label('Submitted'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')

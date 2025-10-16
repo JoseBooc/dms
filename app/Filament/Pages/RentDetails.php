@@ -26,6 +26,11 @@ class RentDetails extends Page
         return Auth::user()?->role === 'tenant';
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()?->role === 'tenant';
+    }
+
     public function getViewData(): array
     {
         $user = Auth::user();

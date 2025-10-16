@@ -9,14 +9,22 @@
 
             <!-- Utility Types Overview -->
             @if($this->getViewData()['utilityTypes']->count() > 0)
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     @foreach($this->getViewData()['utilityTypes'] as $utilityType)
                         @php
                             $readings = $this->getViewData()['utilityReadings']->get($utilityType->id, collect());
                             $latestReading = $readings->first();
                             $previousReading = $readings->skip(1)->first();
-                            $consumption = $latestReading && $previousReading ? 
-                                $latestReading->reading_value - $previousReading->reading_value : 0;
+                            
+                            // Use stored consumption if available, otherwise calculate
+                            if ($latestReading && $latestReading->consumption > 0) {
+                                $consumption = $latestReading->consumption;
+                            } elseif ($latestReading && $previousReading) {
+                                $consumption = $latestReading->current_reading - $previousReading->current_reading;
+                            } else {
+                                // If no previous reading, show current reading as consumption
+                                $consumption = $latestReading ? $latestReading->current_reading : 0;
+                            }
                         @endphp
                         
                         <div class="bg-white rounded-lg shadow p-6">
@@ -28,7 +36,7 @@
                                 </div>
                                 <div class="ml-3">
                                     <h4 class="text-lg font-semibold text-gray-900">{{ $utilityType->name }}</h4>
-                                    <p class="text-sm text-gray-600">{{ $utilityType->unit }}</p>
+                                    <p class="text-sm text-gray-600">{!! $utilityType->unit !!}</p>
                                 </div>
                             </div>
                             
@@ -36,7 +44,7 @@
                                 <div>
                                     <p class="text-sm text-gray-600">Latest Reading</p>
                                     <p class="text-xl font-bold text-gray-900">
-                                        {{ $latestReading ? number_format($latestReading->reading_value, 2) : 'N/A' }} {{ $utilityType->unit }}
+                                        {{ $latestReading ? number_format($latestReading->current_reading, 2) : 'N/A' }} {!! $utilityType->unit !!}
                                     </p>
                                     @if($latestReading)
                                         <p class="text-xs text-gray-500">{{ $latestReading->reading_date->format('M j, Y') }}</p>
@@ -46,7 +54,7 @@
                                 <div>
                                     <p class="text-sm text-gray-600">Monthly Consumption</p>
                                     <p class="text-lg font-semibold {{ $consumption > 0 ? 'text-red-600' : 'text-gray-900' }}">
-                                        {{ $consumption > 0 ? number_format($consumption, 2) : '0.00' }} {{ $utilityType->unit }}
+                                        {{ $consumption > 0 ? number_format($consumption, 2) : '0.00' }} {!! $utilityType->unit !!}
                                     </p>
                                 </div>
                                 
@@ -84,14 +92,21 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($this->getViewData()['utilityReadings']->flatten()->sortByDesc('reading_date')->take(10) as $reading)
                                     @php
-                                        $previousReading = \App\Models\UtilityReading::where('room_id', $reading->room_id)
-                                            ->where('utility_type_id', $reading->utility_type_id)
-                                            ->where('reading_date', '<', $reading->reading_date)
-                                            ->orderBy('reading_date', 'desc')
-                                            ->first();
-                                        $consumption = $previousReading ? 
-                                            $reading->reading_value - $previousReading->reading_value : 0;
-                                        $cost = $consumption * ($reading->utilityType->rate_per_unit ?? 0);
+                                        // Use stored consumption if available, otherwise calculate
+                                        if ($reading->consumption > 0) {
+                                            $consumption = $reading->consumption;
+                                        } else {
+                                            $previousReading = \App\Models\UtilityReading::where('room_id', $reading->room_id)
+                                                ->where('utility_type_id', $reading->utility_type_id)
+                                                ->where('reading_date', '<', $reading->reading_date)
+                                                ->orderBy('reading_date', 'desc')
+                                                ->first();
+                                            $consumption = $previousReading ? 
+                                                $reading->current_reading - $previousReading->current_reading : 0;
+                                        }
+                                        
+                                        // Use stored price if available, otherwise calculate
+                                        $cost = $reading->price > 0 ? $reading->price : ($consumption * ($reading->utilityType->rate_per_unit ?? 0));
                                     @endphp
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -99,10 +114,10 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-medium text-gray-900">{{ $reading->utilityType->name }}</div>
-                                            <div class="text-sm text-gray-500">{{ $reading->utilityType->unit }}</div>
+                                            <div class="text-sm text-gray-500">{!! $reading->utilityType->unit !!}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            {{ number_format($reading->reading_value, 2) }}
+                                            {{ number_format($reading->current_reading, 2) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
                                             <span class="{{ $consumption > 0 ? 'text-red-600' : 'text-gray-900' }}">

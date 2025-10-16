@@ -3,15 +3,14 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\BillResource\Pages;
-use App\Filament\Resources\BillResource\RelationManagers;
 use App\Models\Bill;
+use App\Models\User;
+use App\Models\Room;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class BillResource extends Resource
 {
@@ -20,6 +19,10 @@ class BillResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-cash';
 
     protected static ?string $navigationGroup = 'Financial Management';
+
+    protected static ?string $navigationLabel = 'Billing';
+
+    protected static ?string $slug = 'billing';
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -31,6 +34,11 @@ class BillResource extends Resource
         return auth()->user()->isAdmin() || auth()->user()->isStaff();
     }
 
+    public static function canCreate(): bool
+    {
+        return auth()->user()->isAdmin() || auth()->user()->isStaff();
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -38,21 +46,22 @@ class BillResource extends Resource
                 Forms\Components\Section::make('Bill Information')
                     ->schema([
                         Forms\Components\Select::make('tenant_id')
-                            ->relationship('tenant', 'name')
+                            ->label('Tenant')
+                            ->options(User::where('role', 'tenant')->pluck('name', 'id'))
                             ->required()
                             ->searchable(),
                         
                         Forms\Components\Select::make('room_id')
-                            ->relationship('room', 'room_number')
+                            ->label('Room')
+                            ->options(Room::all()->pluck('room_number', 'id'))
                             ->required()
                             ->searchable(),
                         
                         Forms\Components\Select::make('bill_type')
                             ->options([
-                                'monthly' => 'Monthly Rent',
-                                'utility' => 'Utility Bill',
-                                'maintenance' => 'Maintenance Fee',
-                                'deposit' => 'Security Deposit',
+                                'room' => 'Room Rent',
+                                'utility' => 'Utility Bill', 
+                                'maintenance' => 'Maintenance',
                                 'other' => 'Other',
                             ])
                             ->required(),
@@ -65,72 +74,113 @@ class BillResource extends Resource
                             ->required()
                             ->default(now()->addDays(30)),
                         
-                        Forms\Components\Textarea::make('description')
-                            ->maxLength(500),
-                    ])
-                    ->columns(2),
-                
-                Forms\Components\Section::make('Charges Breakdown')
-                    ->schema([
-                        Forms\Components\TextInput::make('room_rate')
-                            ->numeric()
-                            ->prefix('₱')
-                            ->step(0.01)
-                            ->default(0),
+                        Forms\Components\Hidden::make('created_by')
+                            ->default(auth()->id()),
                         
-                        Forms\Components\TextInput::make('electricity')
-                            ->numeric()
-                            ->prefix('₱')
-                            ->step(0.01)
-                            ->default(0),
-                        
-                        Forms\Components\TextInput::make('water')
-                            ->numeric()
-                            ->prefix('₱')
-                            ->step(0.01)
-                            ->default(0),
-                        
-                        Forms\Components\TextInput::make('other_charges')
-                            ->numeric()
-                            ->prefix('₱')
-                            ->step(0.01)
-                            ->default(0),
-                        
-                        Forms\Components\TextInput::make('other_charges_description')
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                        
-                        Forms\Components\TextInput::make('total_amount')
-                            ->numeric()
-                            ->prefix('₱')
-                            ->step(0.01)
-                            ->required()
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
-                
-                Forms\Components\Section::make('Payment Information')
-                    ->schema([
                         Forms\Components\Select::make('status')
+                            ->label('Bill Status')
                             ->options([
-                                'pending' => 'Pending',
+                                'unpaid' => 'Unpaid',
+                                'partially_paid' => 'Partially Paid',
                                 'paid' => 'Paid',
-                                'overdue' => 'Overdue',
-                                'cancelled' => 'Cancelled',
                             ])
+                            ->default('unpaid')
                             ->required()
-                            ->default('pending'),
+                            ->reactive()
+                            ->hiddenOn('create'),
+                        
+                        Forms\Components\Hidden::make('status')
+                            ->default('unpaid')
+                            ->visibleOn('create'),
                         
                         Forms\Components\TextInput::make('amount_paid')
+                            ->label('Amount Paid')
                             ->numeric()
                             ->prefix('₱')
-                            ->step(0.01)
+                            ->default(0)
+                            ->visible(fn ($get) => in_array($get('status'), ['partially_paid', 'paid']))
+                            ->hiddenOn('create'),
+                        
+                        Forms\Components\Hidden::make('amount_paid')
+                            ->default(0)
+                            ->visibleOn('create'),
+                    ])
+                    ->columns(2),
+                
+                Forms\Components\Section::make('Charges')
+                    ->schema([
+                        Forms\Components\TextInput::make('room_rate')
+                            ->label('Room Rate')
+                            ->numeric()
+                            ->prefix('₱')
+                            ->default(0)
+                            ->required()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $set, $get) {
+                                $total = ($get('room_rate') ?: 0) + 
+                                        ($get('electricity') ?: 0) + 
+                                        ($get('water') ?: 0) + 
+                                        ($get('other_charges') ?: 0);
+                                $set('total_amount', $total);
+                            }),
+                        
+                        Forms\Components\TextInput::make('electricity')
+                            ->label('Electricity')
+                            ->numeric()
+                            ->prefix('₱')
+                            ->default(0)
+                            ->required()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $set, $get) {
+                                $total = ($get('room_rate') ?: 0) + 
+                                        ($get('electricity') ?: 0) + 
+                                        ($get('water') ?: 0) + 
+                                        ($get('other_charges') ?: 0);
+                                $set('total_amount', $total);
+                            }),
+                        
+                        Forms\Components\TextInput::make('water')
+                            ->label('Water')
+                            ->numeric()
+                            ->prefix('₱')
+                            ->default(0)
+                            ->required()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $set, $get) {
+                                $total = ($get('room_rate') ?: 0) + 
+                                        ($get('electricity') ?: 0) + 
+                                        ($get('water') ?: 0) + 
+                                        ($get('other_charges') ?: 0);
+                                $set('total_amount', $total);
+                            }),
+                        
+                        Forms\Components\TextInput::make('other_charges')
+                            ->label('Other Charges')
+                            ->numeric()
+                            ->prefix('₱')
+                            ->default(0)
+                            ->required()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, $set, $get) {
+                                $total = ($get('room_rate') ?: 0) + 
+                                        ($get('electricity') ?: 0) + 
+                                        ($get('water') ?: 0) + 
+                                        ($get('other_charges') ?: 0);
+                                $set('total_amount', $total);
+                            }),
+                        
+                        Forms\Components\TextInput::make('total_amount')
+                            ->label('Total Amount')
+                            ->numeric()
+                            ->prefix('₱')
+                            ->required()
+                            ->disabled()
+                            ->dehydrated()
                             ->default(0),
                         
-                        Forms\Components\Select::make('created_by')
-                            ->relationship('createdBy', 'name')
-                            ->default(auth()->id())
-                            ->disabled(),
+                        Forms\Components\Textarea::make('description')
+                            ->label('Description')
+                            ->maxLength(500),
                     ])
                     ->columns(2),
             ]);
@@ -140,85 +190,74 @@ class BillResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('Bill #')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('tenant.name')
                     ->label('Tenant')
                     ->searchable()
                     ->sortable(),
-                
                 Tables\Columns\TextColumn::make('room.room_number')
                     ->label('Room')
-                    ->searchable()
                     ->sortable(),
-                
-                Tables\Columns\BadgeColumn::make('bill_type')
-                    ->colors([
-                        'primary' => 'monthly',
-                        'warning' => 'utility',
-                        'info' => 'maintenance',
-                        'success' => 'deposit',
-                        'secondary' => 'other',
-                    ]),
-                
+                Tables\Columns\TextColumn::make('bill_type')
+                    ->label('Type')
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'room' => 'Room Rent',
+                        'utility' => 'Utility Bill',
+                        'maintenance' => 'Maintenance',
+                        'other' => 'Other',
+                        default => ucfirst($state),
+                    }),
                 Tables\Columns\TextColumn::make('total_amount')
-                    ->money('php')
+                    ->label('Total Amount')
+                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
                     ->sortable(),
-                
                 Tables\Columns\TextColumn::make('amount_paid')
-                    ->money('php')
+                    ->label('Amount Paid')
+                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
                     ->sortable(),
-                
                 Tables\Columns\BadgeColumn::make('status')
+                    ->label('Status')
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'unpaid' => 'unpaid',
+                        'partially_paid' => 'partially paid',
+                        'paid' => 'paid',
+                        default => strtolower($state),
+                    })
                     ->colors([
-                        'warning' => 'pending',
+                        'danger' => 'unpaid',
+                        'warning' => 'partially_paid',
                         'success' => 'paid',
-                        'danger' => 'overdue',
-                        'secondary' => 'cancelled',
                     ]),
-                
-                Tables\Columns\TextColumn::make('bill_date')
-                    ->date()
-                    ->sortable(),
-                
                 Tables\Columns\TextColumn::make('due_date')
+                    ->label('Due Date')
                     ->date()
                     ->sortable(),
-                
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Pending',
+                        'unpaid' => 'Unpaid',
+                        'partially_paid' => 'Partially Paid',
                         'paid' => 'Paid',
-                        'overdue' => 'Overdue',
-                        'cancelled' => 'Cancelled',
                     ]),
-                
                 Tables\Filters\SelectFilter::make('bill_type')
                     ->options([
-                        'monthly' => 'Monthly Rent',
+                        'room' => 'Room Rent',
                         'utility' => 'Utility Bill',
-                        'maintenance' => 'Maintenance Fee',
-                        'deposit' => 'Security Deposit',
+                        'maintenance' => 'Maintenance',
                         'other' => 'Other',
                     ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
-            ]);
-    }
-    
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
+            ])
+            ->defaultSort('created_at', 'desc');
     }
     
     public static function getPages(): array
@@ -228,5 +267,5 @@ class BillResource extends Resource
             'create' => Pages\CreateBill::route('/create'),
             'edit' => Pages\EditBill::route('/{record}/edit'),
         ];
-    }    
+    }
 }

@@ -10,6 +10,8 @@ class EditBill extends EditRecord
 {
     protected static string $resource = BillResource::class;
 
+    protected ?string $heading = 'Edit Bill';
+
     protected function getActions(): array
     {
         return [

@@ -280,7 +280,8 @@ class TenantResource extends Resource
                 Tables\Columns\TextColumn::make('phone_number')
                     ->searchable(),
                 
-                Tables\Columns\TextColumn::make('personal_email')
+                Tables\Columns\TextColumn::make('user.email')
+                    ->label('Personal email')
                     ->searchable(),
                 
                 Tables\Columns\TextColumn::make('gender'),
