@@ -16,14 +16,6 @@ class ListBills extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Create Bill'),
-        ];
-    }
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\CreateAction::make()
                 ->label('New Bill'),
         ];
     }

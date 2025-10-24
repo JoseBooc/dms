@@ -18,7 +18,7 @@ class TenantBillResource extends Resource
 {
     protected static ?string $model = Bill::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-document';
     
     protected static ?string $navigationLabel = 'My Bills';
     

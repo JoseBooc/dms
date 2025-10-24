@@ -8,7 +8,7 @@ use App\Models\RoomAssignment;
 
 class RoomInformation extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static ?string $navigationIcon = 'heroicon-o-office-building';
     
     protected static ?string $navigationLabel = 'Room Information';
     

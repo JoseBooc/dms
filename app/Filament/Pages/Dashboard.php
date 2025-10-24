@@ -15,7 +15,7 @@ class Dashboard extends Page
     
     protected static ?string $title = 'Dashboard';
 
-    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static ?string $navigationIcon = 'heroicon-o-office-building';
 
     protected static ?int $navigationSort = 1;
 

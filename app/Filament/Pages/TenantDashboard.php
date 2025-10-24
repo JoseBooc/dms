@@ -11,7 +11,7 @@ use App\Models\UtilityReading;
 
 class TenantDashboard extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static ?string $navigationIcon = 'heroicon-o-office-building';
     
     protected static ?string $navigationLabel = 'Home';
     

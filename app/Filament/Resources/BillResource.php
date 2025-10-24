@@ -6,11 +6,14 @@ use App\Filament\Resources\BillResource\Pages;
 use App\Models\Bill;
 use App\Models\User;
 use App\Models\Room;
+use App\Services\PenaltyService;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class BillResource extends Resource
 {
@@ -22,11 +25,16 @@ class BillResource extends Resource
 
     protected static ?string $navigationLabel = 'Billing';
 
+    public static function canAccess(): bool
+    {
+        return Auth::user()?->role === 'admin';
+    }
+
     protected static ?string $slug = 'billing';
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isStaff();
+        return Auth::user()?->role === 'admin';
     }
 
     public static function canViewAny(): bool
@@ -86,7 +94,6 @@ class BillResource extends Resource
                             ])
                             ->default('unpaid')
                             ->required()
-                            ->reactive()
                             ->hiddenOn('create'),
                         
                         Forms\Components\Hidden::make('status')
@@ -98,7 +105,6 @@ class BillResource extends Resource
                             ->numeric()
                             ->prefix('₱')
                             ->default(0)
-                            ->visible(fn ($get) => in_array($get('status'), ['partially_paid', 'paid']))
                             ->hiddenOn('create'),
                         
                         Forms\Components\Hidden::make('amount_paid')
@@ -114,60 +120,28 @@ class BillResource extends Resource
                             ->numeric()
                             ->prefix('₱')
                             ->default(0)
-                            ->required()
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $total = ($get('room_rate') ?: 0) + 
-                                        ($get('electricity') ?: 0) + 
-                                        ($get('water') ?: 0) + 
-                                        ($get('other_charges') ?: 0);
-                                $set('total_amount', $total);
-                            }),
+                            ->required(),
                         
                         Forms\Components\TextInput::make('electricity')
                             ->label('Electricity')
                             ->numeric()
                             ->prefix('₱')
                             ->default(0)
-                            ->required()
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $total = ($get('room_rate') ?: 0) + 
-                                        ($get('electricity') ?: 0) + 
-                                        ($get('water') ?: 0) + 
-                                        ($get('other_charges') ?: 0);
-                                $set('total_amount', $total);
-                            }),
+                            ->required(),
                         
                         Forms\Components\TextInput::make('water')
                             ->label('Water')
                             ->numeric()
                             ->prefix('₱')
                             ->default(0)
-                            ->required()
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $total = ($get('room_rate') ?: 0) + 
-                                        ($get('electricity') ?: 0) + 
-                                        ($get('water') ?: 0) + 
-                                        ($get('other_charges') ?: 0);
-                                $set('total_amount', $total);
-                            }),
+                            ->required(),
                         
                         Forms\Components\TextInput::make('other_charges')
                             ->label('Other Charges')
                             ->numeric()
                             ->prefix('₱')
                             ->default(0)
-                            ->required()
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, $set, $get) {
-                                $total = ($get('room_rate') ?: 0) + 
-                                        ($get('electricity') ?: 0) + 
-                                        ($get('water') ?: 0) + 
-                                        ($get('other_charges') ?: 0);
-                                $set('total_amount', $total);
-                            }),
+                            ->required(),
                         
                         Forms\Components\TextInput::make('total_amount')
                             ->label('Total Amount')
@@ -202,33 +176,43 @@ class BillResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('bill_type')
                     ->label('Type')
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'room' => 'Room Rent',
-                        'utility' => 'Utility Bill',
-                        'maintenance' => 'Maintenance',
-                        'other' => 'Other',
-                        default => ucfirst($state),
+                    ->formatStateUsing(function ($state) {
+                        switch ($state) {
+                            case 'room': return 'Room Rent';
+                            case 'utility': return 'Utility Bill';
+                            case 'maintenance': return 'Maintenance';
+                            case 'other': return 'Other';
+                            default: return ucfirst($state);
+                        }
                     }),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Total Amount')
-                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('penalty_amount')
+                    ->label('Penalty')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('amount_paid')
-                    ->label('Amount Paid')
-                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
+                    ->label('Paid')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('balance')
+                    ->label('Balance')
+                    ->weight('bold'),
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'unpaid' => 'unpaid',
-                        'partially_paid' => 'partially paid',
-                        'paid' => 'paid',
-                        default => strtolower($state),
-                    })
                     ->colors([
                         'danger' => 'unpaid',
                         'warning' => 'partially_paid',
                         'success' => 'paid',
+                    ]),
+                Tables\Columns\TextColumn::make('overdue_days')
+                    ->label('Overdue Days')
+                    ->visible(fn () => true),
+                Tables\Columns\BadgeColumn::make('penalty_status')
+                    ->label('Penalty')
+                    ->colors([
+                        'success' => 'waived',
+                        'warning' => 'applied',
+                        'secondary' => 'none',
                     ]),
                 Tables\Columns\TextColumn::make('due_date')
                     ->label('Due Date')
@@ -251,6 +235,16 @@ class BillResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('calculate_penalty')
+                    ->label('Calculate Penalty')
+                    ->icon('heroicon-o-calculator')
+                    ->color('warning'),
+                
+                Tables\Actions\Action::make('waive_penalty')
+                    ->label('Waive Penalty')
+                    ->icon('heroicon-o-x')
+                    ->color('success'),
+                
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

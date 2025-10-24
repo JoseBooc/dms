@@ -22,6 +22,11 @@ class UserResource extends Resource
 
     protected static ?string $navigationGroup = 'User Management';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         return auth()->user()->isAdmin() || auth()->user()->isStaff();
