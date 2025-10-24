@@ -31,6 +31,12 @@ class UtilityReading extends Model
         'reading_date' => 'date',
     ];
 
+    protected $appends = [
+        'billing_period',
+        'total_amount',
+        'billing_status',
+    ];
+
     /**
      * Boot the model
      */
@@ -100,6 +106,38 @@ class UtilityReading extends Model
     public function tenant()
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /**
+     * Get formatted billing period
+     */
+    public function getBillingPeriodAttribute(): string
+    {
+        return $this->reading_date->format('F Y');
+    }
+
+    /**
+     * Get total amount (price stored in the record)
+     */
+    public function getTotalAmountAttribute(): float
+    {
+        return $this->price ?? $this->calculateCost();
+    }
+
+    /**
+     * Check if this reading has been billed
+     */
+    public function isBilled(): bool
+    {
+        return !is_null($this->bill_id);
+    }
+
+    /**
+     * Get billing status
+     */
+    public function getBillingStatusAttribute(): string
+    {
+        return $this->isBilled() ? 'Billed' : 'Pending';
     }
 
     /**

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\RoomAssignment;
 use App\Models\Bill;
 use App\Models\MaintenanceRequest;
+use App\Models\UtilityReading;
 
 class TenantDashboard extends Page
 {
@@ -27,6 +28,7 @@ class TenantDashboard extends Page
     public $recentBills;
     public $maintenanceRequests;
     public $maintenanceStats = [];
+    public $utilityReadings;
 
     public static function canAccess(): bool
     {
@@ -46,6 +48,7 @@ class TenantDashboard extends Page
         $this->recentBills = $data['recentBills'];
         $this->maintenanceRequests = $data['maintenanceRequests'];
         $this->maintenanceStats = $data['maintenanceStats'];
+        $this->utilityReadings = $data['utilityReadings'];
     }
 
     public function getViewData(): array
@@ -58,7 +61,9 @@ class TenantDashboard extends Page
                 'currentAssignment' => null,
                 'recentBills' => collect(),
                 'maintenanceRequests' => collect(),
-                'stats' => []
+                'stats' => [],
+                'maintenanceStats' => [],
+                'utilityReadings' => collect(),
             ];
         }
 
@@ -81,6 +86,18 @@ class TenantDashboard extends Page
             ->take(5)
             ->get();
 
+        // Get utility readings for tenant's room (last 6 months)
+        $utilityReadings = collect();
+        if ($currentAssignment && $currentAssignment->room_id) {
+            $utilityReadings = UtilityReading::where('room_id', $currentAssignment->room_id)
+                ->where('tenant_id', $tenant->id)
+                ->with(['utilityType', 'room'])
+                ->orderBy('reading_date', 'desc')
+                ->take(10)
+                ->get()
+                ->groupBy('reading_date');
+        }
+
         // Calculate stats (bills use user_id, maintenance uses tenant_id)
         $stats = [
             'total_bills' => Bill::where('tenant_id', $user->id)->count(),
@@ -101,7 +118,8 @@ class TenantDashboard extends Page
             'recentBills' => $recentBills,
             'maintenanceRequests' => $maintenanceRequests,
             'stats' => $stats,
-            'maintenanceStats' => $maintenanceStats
+            'maintenanceStats' => $maintenanceStats,
+            'utilityReadings' => $utilityReadings,
         ];
     }
 
