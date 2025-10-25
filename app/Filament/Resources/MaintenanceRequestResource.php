@@ -23,6 +23,11 @@ class MaintenanceRequestResource extends Resource
 
     protected static ?string $navigationLabel = 'All Maintenance Requests';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     protected static ?string $slug = 'admin-maintenance-requests';
 
     public static function shouldRegisterNavigation(): bool

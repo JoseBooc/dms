@@ -10,7 +10,7 @@ use App\Models\UtilityType;
 
 class UtilityDetails extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-fire';
+    protected static ?string $navigationIcon = 'heroicon-o-lightning-bolt';
     
     protected static ?string $navigationLabel = 'Utility Details';
     

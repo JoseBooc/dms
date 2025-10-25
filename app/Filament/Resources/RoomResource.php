@@ -21,6 +21,11 @@ class RoomResource extends Resource
 
     protected static ?string $navigationGroup = 'Dormitory Management';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         return auth()->user()->isAdmin() || auth()->user()->isStaff();

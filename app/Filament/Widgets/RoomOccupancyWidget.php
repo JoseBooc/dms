@@ -30,7 +30,7 @@ class RoomOccupancyWidget extends BaseWidget
         return [
             Card::make('Total Rooms', $totalRooms)
                 ->description('Total number of rooms')
-                ->descriptionIcon('heroicon-o-home')
+                ->descriptionIcon('heroicon-o-office-building')
                 ->color('primary'),
                 
             Card::make('Occupied Rooms', $occupiedRooms)

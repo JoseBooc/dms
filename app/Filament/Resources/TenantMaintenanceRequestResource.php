@@ -17,7 +17,7 @@ class TenantMaintenanceRequestResource extends Resource
 {
     protected static ?string $model = MaintenanceRequest::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-document';
     
     protected static ?string $navigationLabel = 'Maintenance Requests';
     
