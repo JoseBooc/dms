@@ -29,12 +29,12 @@ class ComplaintResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isStaff();
+        return auth()->user()->isAdmin();
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isStaff();
+        return auth()->user()->isAdmin();
     }
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder

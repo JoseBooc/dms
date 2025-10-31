@@ -28,12 +28,12 @@ class RoomResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isStaff();
+        return auth()->user()->isAdmin();
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isStaff();
+        return auth()->user()->isAdmin();
     }
 
     public static function form(Form $form): Form

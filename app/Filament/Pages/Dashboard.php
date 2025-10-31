@@ -5,7 +5,8 @@ namespace App\Filament\Pages;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Room;
-use App\Models\Tenant;
+use App\Models\RoomAssignment;
+use App\Models\User;
 use App\Models\Bill;
 use App\Models\MaintenanceRequest;
 
@@ -22,43 +23,89 @@ class Dashboard extends Page
     public static function canAccess(): bool
     {
         $user = Auth::user();
-        return $user && in_array($user->role, ['admin', 'staff']);
+        return $user && $user->role === 'admin';
     }
 
     public static function shouldRegisterNavigation(): bool
     {
         $user = Auth::user();
-        return $user && in_array($user->role, ['admin', 'staff']);
+        return $user && $user->role === 'admin';
     }
 
     public function mount(): void
     {
-        // Redirect tenants to their home page
-        if (Auth::user()?->role === 'tenant') {
-            redirect('/dashboard/tenant-dashboard');
+        // Redirect non-admin users
+        if (Auth::user()?->role !== 'admin') {
+            $role = Auth::user()?->role;
+            if ($role === 'tenant') {
+                redirect('/dashboard/tenant-dashboard');
+            } elseif ($role === 'staff') {
+                redirect('/dashboard/staff-dashboard');
+            }
         }
     }
 
-    public function getViewData(): array
+    public function getTotalRoomsProperty()
     {
-        // Get overview statistics for admin/staff
-        $stats = [
-            'total_rooms' => Room::count(),
-            'occupied_rooms' => Room::where('status', 'occupied')->count(),
-            'available_rooms' => Room::where('status', 'available')->count(),
-            'total_tenants' => Tenant::count(),
-            'unpaid_bills' => Bill::where('status', '!=', 'paid')->count(),
-            'pending_maintenance' => MaintenanceRequest::where('status', '!=', 'completed')->count(),
-            'monthly_revenue' => Bill::where('status', 'paid')
-                ->whereMonth('created_at', now()->month)
-                ->sum('total_amount'),
-        ];
+        return Room::count();
+    }
 
-        // Calculate occupancy rate
-        $stats['occupancy_rate'] = $stats['total_rooms'] > 0 
-            ? round(($stats['occupied_rooms'] / $stats['total_rooms']) * 100, 1) 
-            : 0;
+    public function getOccupiedRoomsProperty()
+    {
+        return Room::whereHas('currentAssignments')->count();
+    }
 
-        return ['stats' => $stats];
+    public function getAvailableRoomsProperty()
+    {
+        return Room::where('status', 'available')
+            ->whereDoesntHave('currentAssignments')
+            ->count();
+    }
+
+    public function getTotalTenantsProperty()
+    {
+        return User::where('role', 'tenant')->count();
+    }
+
+    public function getOccupancyRateProperty()
+    {
+        if ($this->totalRooms === 0) {
+            return 0;
+        }
+        return round(($this->occupiedRooms / $this->totalRooms) * 100, 1);
+    }
+
+    public function getUnpaidBillsProperty()
+    {
+        return Bill::whereIn('status', ['unpaid', 'partially_paid'])->count();
+    }
+
+    public function getMonthlyRevenueProperty()
+    {
+        return Bill::where('status', 'paid')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('total_amount');
+    }
+
+    public function getPendingMaintenanceProperty()
+    {
+        return MaintenanceRequest::whereIn('status', ['pending', 'in_progress'])->count();
+    }
+
+    public function getRecentBillsProperty()
+    {
+        return Bill::with(['tenant', 'room'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+    }
+
+    public function getRecentMaintenanceProperty()
+    {
+        return MaintenanceRequest::with(['tenant', 'room'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
     }
 }
