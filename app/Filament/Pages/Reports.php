@@ -28,6 +28,11 @@ class Reports extends Page implements HasForms
         return auth()->user()?->isAdmin() ?? false;
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     protected ReportsService $reportsService;
 
     // Form data
@@ -142,10 +147,5 @@ class Reports extends Page implements HasForms
             ->body("Export to {$format} feature will be available in the next update.")
             ->warning()
             ->send();
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return auth()->user()->isAdmin() || auth()->user()->isStaff();
     }
 }

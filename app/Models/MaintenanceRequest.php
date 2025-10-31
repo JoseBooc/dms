@@ -19,10 +19,13 @@ class MaintenanceRequest extends Model
         'priority',
         'photos',
         'assigned_to',
+        'completion_proof',
+        'completion_notes',
     ];
 
     protected $casts = [
         'photos' => 'array',
+        'completion_proof' => 'array',
     ];
 
     public function tenant(): BelongsTo

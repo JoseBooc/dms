@@ -19,20 +19,30 @@ Route::get('/', function () {
         $user = auth()->user();
         if ($user->role === 'tenant') {
             return redirect('/dashboard/tenant-dashboard');
+        } elseif ($user->role === 'staff') {
+            return redirect('/dashboard/staff-dashboard');
+        } elseif ($user->role === 'admin') {
+            return redirect('/dashboard/dashboard');
         }
-        return redirect('/dashboard');
+        // Fallback to admin dashboard
+        return redirect('/dashboard/dashboard');
     }
     return redirect('/login');
 });
 
-// Redirect tenants from main dashboard to their home page
+// Redirect tenants and staff from main dashboard to their specific pages
 Route::get('/dashboard', function () {
     if (auth()->check()) {
         $user = auth()->user();
         if ($user->role === 'tenant') {
             return redirect('/dashboard/tenant-dashboard');
+        } elseif ($user->role === 'staff') {
+            return redirect('/dashboard/staff-dashboard');
+        } elseif ($user->role === 'admin') {
+            // For admin, redirect to the default Filament dashboard
+            return redirect('/dashboard/dashboard');
         }
-        // For admin/staff, let Filament handle the dashboard
+        // Fallback to Filament dashboard
         return redirect('/dashboard/dashboard');
     }
     return redirect('/login');
@@ -50,6 +60,14 @@ Route::get('/register', function () {
 
 // Redirect any admin URLs without proper prefix to dashboard
 Route::get('/admin', function () {
+    if (auth()->check()) {
+        $user = auth()->user();
+        if ($user->role === 'staff') {
+            return redirect('/dashboard/staff-dashboard');
+        } elseif ($user->role === 'admin') {
+            return redirect('/dashboard/dashboard');
+        }
+    }
     return redirect('/dashboard');
 });
 

@@ -32,12 +32,12 @@ class MaintenanceRequestResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isStaff();
+        return auth()->user()->isAdmin();
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->isAdmin() || auth()->user()->isStaff();
+        return auth()->user()->isAdmin();
     }
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
@@ -114,6 +114,25 @@ class MaintenanceRequestResource extends Resource
                             ->default('pending'),
                     ])
                     ->columns(2),
+                
+                Forms\Components\Section::make('Completion Details')
+                    ->schema([
+                        Forms\Components\FileUpload::make('completion_proof')
+                            ->label('Completion Proof Photos')
+                            ->image()
+                            ->multiple()
+                            ->directory('maintenance-completion-proof')
+                            ->maxFiles(5)
+                            ->columnSpanFull()
+                            ->visible(fn ($get) => $get('status') === 'completed'),
+                        
+                        Forms\Components\Textarea::make('completion_notes')
+                            ->label('Completion Notes')
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->visible(fn ($get) => $get('status') === 'completed'),
+                    ])
+                    ->visible(fn ($get) => $get('status') === 'completed'),
             ]);
     }
 
@@ -144,6 +163,19 @@ class MaintenanceRequestResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->formatStateUsing(fn ($state) => $state ? ucwords(str_replace('_', ' ', $state)) : ''),
+                Tables\Columns\TextColumn::make('assignee.name')
+                    ->label('Assigned To')
+                    ->formatStateUsing(fn ($state) => $state ?? 'Not assigned'),
+                Tables\Columns\ViewColumn::make('completion_proof')
+                    ->label('Completion Proof')
+                    ->view('filament.tables.completion-proof-column'),
+                Tables\Columns\TextColumn::make('completion_notes')
+                    ->label('Completion Notes')
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record?->completion_notes)
+                    ->formatStateUsing(fn ($state, $record) => 
+                        $record->status === 'completed' && $state ? $state : '-'
+                    ),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
