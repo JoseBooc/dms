@@ -126,15 +126,7 @@ class StaffMaintenanceRequests extends Page implements HasForms
             return;
         }
 
-        // Validate that proof is uploaded
-        if (empty($this->completionProof)) {
-            Notification::make()
-                ->title('Proof Required')
-                ->body('Please upload proof of completed work.')
-                ->warning()
-                ->send();
-            return;
-        }
+        // Note: Proof upload is now optional for testing purposes
 
         $request->update([
             'status' => 'completed',
@@ -156,14 +148,14 @@ class StaffMaintenanceRequests extends Page implements HasForms
     {
         return [
             FileUpload::make('completionProof')
-                ->label('Completion Proof Photos')
+                ->label('Completion Proof Photos (Optional)')
                 ->image()
                 ->multiple()
                 ->directory('maintenance-completion-proof')
                 ->visibility('private')
                 ->acceptedFileTypes(['image/*'])
                 ->maxFiles(5)
-                ->required(),
+                ->helperText('Upload photos of completed work (optional for testing)'),
             
             Textarea::make('completionNotes')
                 ->label('Completion Notes')
