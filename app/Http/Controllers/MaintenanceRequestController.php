@@ -45,7 +45,6 @@ class MaintenanceRequestController extends Controller
             'description' => ['required', 'string', 'max:2000'],
             'priority' => ['required', 'in:low,medium,high'],
             'area' => ['nullable', 'string', 'max:255'],
-            'photos.*' => ['nullable', 'image', 'max:4096'],
         ]);
 
         $active = RoomAssignment::where('tenant_id', $tenant->id)
@@ -56,13 +55,6 @@ class MaintenanceRequestController extends Controller
             return back()->with('error', 'No active room assignment found.');
         }
 
-        $paths = [];
-        if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $file) {
-                $paths[] = $file->store('maintenance-photos', 'public');
-            }
-        }
-
         MaintenanceRequest::create([
             'tenant_id' => $tenant->id,
             'room_id' => $active->room_id,
@@ -70,7 +62,6 @@ class MaintenanceRequestController extends Controller
             'priority' => $validated['priority'],
             'area' => $validated['area'] ?? null,
             'status' => 'pending',
-            'photos' => $paths ?: null,
         ]);
 
         return redirect()->route('maintenance-requests.index')
@@ -106,21 +97,12 @@ class MaintenanceRequestController extends Controller
             'description' => ['required', 'string', 'max:2000'],
             'priority' => ['required', 'in:low,medium,high'],
             'area' => ['nullable', 'string', 'max:255'],
-            'photos.*' => ['nullable', 'image', 'max:4096'],
         ]);
-
-        $paths = $maintenance_request->photos ?? [];
-        if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $file) {
-                $paths[] = $file->store('maintenance-photos', 'public');
-            }
-        }
 
         $maintenance_request->update([
             'description' => $validated['description'],
             'priority' => $validated['priority'],
             'area' => $validated['area'] ?? null,
-            'photos' => $paths ?: null,
         ]);
 
         return redirect()->route('maintenance-requests.index')
@@ -130,11 +112,6 @@ class MaintenanceRequestController extends Controller
     public function destroy(MaintenanceRequest $maintenance_request)
     {
         $this->authorizeOwner($maintenance_request);
-        if ($maintenance_request->photos) {
-            foreach ($maintenance_request->photos as $p) {
-                Storage::disk('public')->delete($p);
-            }
-        }
         $maintenance_request->delete();
         return redirect()->route('maintenance-requests.index')
             ->with('success', 'Maintenance request deleted.');

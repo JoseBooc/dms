@@ -87,15 +87,6 @@ class TenantComplaintResource extends Resource
                             ->required()
                             ->rows(4)
                             ->placeholder('Please provide detailed information about your complaint'),
-                            
-                        Forms\Components\FileUpload::make('attachments')
-                            ->label('Supporting Documents/Photos')
-                            ->multiple()
-                            ->disk('public')
-                            ->directory('complaint-attachments')
-                            ->maxFiles(5)
-                            ->acceptedFileTypes(['image/*', 'application/pdf'])
-                            ->helperText('Upload up to 5 files (images or PDFs) to support your complaint'),
                     ])
                     ->columns(2),
             ]);

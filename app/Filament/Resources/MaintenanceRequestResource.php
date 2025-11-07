@@ -87,13 +87,6 @@ class MaintenanceRequestResource extends Resource
                             ->maxLength(1000)
                             ->rows(4)
                             ->columnSpanFull(),
-                        
-                        Forms\Components\FileUpload::make('photos')
-                            ->image()
-                            ->multiple()
-                            ->directory('maintenance-photos')
-                            ->maxFiles(5)
-                            ->columnSpanFull(),
                     ]),
                 
                 Forms\Components\Section::make('Assignment & Status')
@@ -117,15 +110,6 @@ class MaintenanceRequestResource extends Resource
                 
                 Forms\Components\Section::make('Completion Details')
                     ->schema([
-                        Forms\Components\FileUpload::make('completion_proof')
-                            ->label('Completion Proof Photos')
-                            ->image()
-                            ->multiple()
-                            ->directory('maintenance-completion-proof')
-                            ->maxFiles(5)
-                            ->columnSpanFull()
-                            ->visible(fn ($get) => $get('status') === 'completed'),
-                        
                         Forms\Components\Textarea::make('completion_notes')
                             ->label('Completion Notes')
                             ->rows(3)
@@ -166,9 +150,6 @@ class MaintenanceRequestResource extends Resource
                 Tables\Columns\TextColumn::make('assignee.name')
                     ->label('Assigned To')
                     ->formatStateUsing(fn ($state) => $state ?? 'Not assigned'),
-                Tables\Columns\ViewColumn::make('completion_proof')
-                    ->label('Completion Proof')
-                    ->view('filament.tables.completion-proof-column'),
                 Tables\Columns\TextColumn::make('completion_notes')
                     ->label('Completion Notes')
                     ->limit(30)

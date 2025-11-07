@@ -114,4 +114,9 @@ class RoomAssignment extends Model
     {
         return $this->belongsTo(User::class, 'assigned_by');
     }
+
+    public function deposit()
+    {
+        return $this->hasOne(Deposit::class);
+    }
 }

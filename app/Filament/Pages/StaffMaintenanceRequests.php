@@ -5,7 +5,6 @@ namespace App\Filament\Pages;
 use App\Models\MaintenanceRequest;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
@@ -30,7 +29,25 @@ class StaffMaintenanceRequests extends Page implements HasForms
     public $showModal = false;
     public $showCompletionModal = false;
     public $completionNotes = '';
-    public $completionProof = [];
+
+    public function mount(): void
+    {
+        $this->form->fill();
+    }
+
+    protected function getFormSchema(): array
+    {
+        return [
+            Textarea::make('completionNotes')
+                ->label('Completion Notes')
+                ->placeholder('Enter notes about the completed work...')
+                ->rows(3)
+                ->required()
+                ->minLength(10)
+                ->maxLength(1000)
+                ->helperText('Please provide detailed notes about the work completed (minimum 10 characters).'),
+        ];
+    }
 
     public static function canAccess(): bool
     {
@@ -97,7 +114,7 @@ class StaffMaintenanceRequests extends Page implements HasForms
     {
         $this->showModal = false;
         $this->selectedRequest = null;
-        $this->reset(['completionNotes', 'completionProof']);
+        $this->reset(['completionNotes']);
     }
 
     public function openCompletionModal($requestId)
@@ -110,11 +127,19 @@ class StaffMaintenanceRequests extends Page implements HasForms
     {
         $this->showCompletionModal = false;
         $this->selectedRequest = null;
-        $this->reset(['completionNotes', 'completionProof']);
+        $this->reset(['completionNotes']);
     }
 
     public function completeWork($requestId)
     {
+        try {
+            // Validate the form first - this will throw ValidationException if invalid
+            $state = $this->form->getState();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Re-throw the validation exception to show errors
+            throw $e;
+        }
+        
         $request = MaintenanceRequest::findOrFail($requestId);
         
         if ($request->assigned_to !== Auth::id()) {
@@ -126,42 +151,21 @@ class StaffMaintenanceRequests extends Page implements HasForms
             return;
         }
 
-        // Note: Proof upload is now optional for testing purposes
+        // Maintenance request completion now uses notes only
 
         $request->update([
             'status' => 'completed',
-            'completion_proof' => $this->completionProof,
-            'completion_notes' => $this->completionNotes,
+            'completion_notes' => $state['completionNotes'],
         ]);
 
         Notification::make()
-            ->title('Request Completed')
-            ->body("Request #{$request->id} marked as completed with proof.")
+            ->title('Request Marked as Completed')
+            ->body("Request #{$request->id} has been marked as completed.")
             ->success()
             ->send();
 
         // Close the completion modal and reset form
         $this->closeCompletionModal();
-    }
-
-    protected function getFormSchema(): array
-    {
-        return [
-            FileUpload::make('completionProof')
-                ->label('Completion Proof Photos (Optional)')
-                ->image()
-                ->multiple()
-                ->directory('maintenance-completion-proof')
-                ->visibility('private')
-                ->acceptedFileTypes(['image/*'])
-                ->maxFiles(5)
-                ->helperText('Upload photos of completed work (optional for testing)'),
-            
-            Textarea::make('completionNotes')
-                ->label('Completion Notes')
-                ->placeholder('Optional notes about the completed work...')
-                ->rows(3),
-        ];
     }
 
     protected function getActions(): array
@@ -226,21 +230,20 @@ class StaffMaintenanceRequests extends Page implements HasForms
 
         if ($request->status === 'in_progress') {
             $actions[] = Action::make('complete_work')
-                ->label('Complete Work')
+                ->label('Mark as Completed')
                 ->icon('heroicon-o-check')
-                ->color('success')
-                ->modalHeading("Complete Maintenance Request #{$request->id}")
+                ->color('warning')
+                ->modalHeading("Mark Maintenance Request #{$request->id} as Completed")
                 ->form($this->getFormSchema())
                 ->action(function (array $data) use ($request) {
                     $request->update([
                         'status' => 'completed',
-                        'completion_proof' => $data['completionProof'],
                         'completion_notes' => $data['completionNotes'],
                     ]);
 
                     Notification::make()
-                        ->title('Request Completed')
-                        ->body("Request #{$request->id} marked as completed with proof.")
+                        ->title('Request Marked as Completed')
+                        ->body("Request #{$request->id} has been marked as completed.")
                         ->success()
                         ->send();
                 });

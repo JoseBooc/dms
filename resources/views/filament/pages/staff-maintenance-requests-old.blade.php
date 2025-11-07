@@ -151,16 +151,7 @@
                                     <p class="text-sm text-gray-900">{{ $selectedRequest->description }}</p>
                                 </div>
 
-                                @if($selectedRequest->photos)
-                                    <div class="mb-6">
-                                        <p class="text-sm font-medium text-gray-500 mb-2">Photos</p>
-                                        <div class="grid grid-cols-2 gap-2">
-                                            @foreach($selectedRequest->photos as $photo)
-                                                <img src="{{ Storage::url($photo) }}" alt="Request photo" class="w-full h-32 object-cover rounded">
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                @endif
+
 
                                 @if($selectedRequest->status === 'in_progress')
                                     <!-- Completion Form -->
@@ -182,25 +173,7 @@
                                     </div>
                                 @endif
 
-                                @if($selectedRequest->status === 'completed' && $selectedRequest->completion_proof)
-                                    <!-- Show completion proof -->
-                                    <div class="border-t pt-6">
-                                        <h4 class="text-md font-medium text-gray-900 mb-4">Completion Proof</h4>
-                                        
-                                        @if($selectedRequest->completion_notes)
-                                            <div class="mb-4">
-                                                <p class="text-sm font-medium text-gray-500">Notes</p>
-                                                <p class="text-sm text-gray-900">{{ $selectedRequest->completion_notes }}</p>
-                                            </div>
-                                        @endif
-                                        
-                                        <div class="grid grid-cols-2 gap-2">
-                                            @foreach($selectedRequest->completion_proof as $photo)
-                                                <img src="{{ Storage::url($photo) }}" alt="Completion proof" class="w-full h-32 object-cover rounded">
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                @endif
+
                             </div>
                         </div>
                     </div>

@@ -101,10 +101,11 @@
                                             @elseif($request->status === 'in_progress')
                                                 <x-filament::button 
                                                     size="sm" 
-                                                    color="success"
+                                                    color="warning"
+                                                    class="btn-mark-action"
                                                     wire:click.stop="openCompletionModal({{ $request->id }})"
                                                 >
-                                                    Complete
+                                                    Mark as Completed
                                                 </x-filament::button>
                                             @endif
                                         </td>
@@ -183,16 +184,7 @@
                             </div>
                         @endif
 
-                        @if($selectedRequest->completion_proof)
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Completion Proof</label>
-                                <div class="mt-1 grid grid-cols-2 gap-2">
-                                    @foreach($selectedRequest->completion_proof as $proof)
-                                        <img src="{{ Storage::url($proof) }}" alt="Completion Proof" class="w-full h-32 object-cover rounded-lg">
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
+
 
                         <div class="text-xs text-gray-500 dark:text-gray-400">
                             Created: {{ $selectedRequest->created_at->format('M d, Y g:i A') }}
@@ -212,8 +204,12 @@
                                 Start Work
                             </x-filament::button>
                         @elseif($selectedRequest->status === 'in_progress')
-                            <x-filament::button color="success" wire:click="openCompletionModal({{ $selectedRequest->id }})">
-                                Complete Work
+                            <x-filament::button 
+                                color="warning"
+                                class="btn-mark-action"
+                                wire:click="openCompletionModal({{ $selectedRequest->id }})"
+                            >
+                                Mark as Completed
                             </x-filament::button>
                         @endif
                     </div>
@@ -234,7 +230,7 @@
                     <div class="bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-                                Complete Maintenance Request #{{ $selectedRequest->id }}
+                                Mark Maintenance Request #{{ $selectedRequest->id }} as Completed
                             </h3>
                             <button wire:click="closeCompletionModal" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,17 +251,21 @@
                         </div>
                         
                         <!-- Completion Form -->
-                        <form wire:submit.prevent="completeWork({{ $selectedRequest->id }})">
+                        <div class="mb-4">
                             {{ $this->form }}
-                        </form>
+                        </div>
                     </div>
                     
                     <div class="bg-gray-50 dark:bg-gray-700 px-6 py-3 flex justify-end space-x-3">
                         <x-filament::button color="secondary" wire:click="closeCompletionModal">
                             Cancel
                         </x-filament::button>
-                        <x-filament::button color="success" wire:click="completeWork({{ $selectedRequest->id }})">
-                            Complete Work
+                        <x-filament::button 
+                            color="warning"
+                            class="btn-mark-action"
+                            wire:click="completeWork({{ $selectedRequest->id }})"
+                        >
+                            Mark as Completed
                         </x-filament::button>
                     </div>
                 </div>

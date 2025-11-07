@@ -166,17 +166,16 @@ class ReportsService
 
         // Average resolution time
         $avgResolutionTime = MaintenanceRequest::where('status', 'completed')
-            ->whereNotNull('completed_at')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, completed_at)) as avg_hours')
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as avg_hours')
             ->value('avg_hours') ?? 0;
 
         // Requests by priority
         $requestsByPriority = MaintenanceRequest::select('priority')
             ->selectRaw('COUNT(*) as count')
             ->selectRaw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed')
-            ->selectRaw('AVG(CASE WHEN status = "completed" AND completed_at IS NOT NULL 
-                        THEN TIMESTAMPDIFF(HOUR, created_at, completed_at) ELSE NULL END) as avg_resolution_hours')
+            ->selectRaw('AVG(CASE WHEN status = "completed" 
+                        THEN TIMESTAMPDIFF(HOUR, created_at, updated_at) ELSE NULL END) as avg_resolution_hours')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->groupBy('priority')
             ->get()

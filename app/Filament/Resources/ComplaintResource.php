@@ -106,20 +106,27 @@ class ComplaintResource extends Resource
                                 'closed' => 'Closed'
                             ])
                             ->required()
-                            ->default('pending'),
+                            ->default('pending')
+                            ->disabled(false)
+                            ->reactive(),
                             
                         Forms\Components\Select::make('assigned_to')
                             ->label('Assigned To')
                             ->options(User::whereIn('role', ['admin', 'staff'])->pluck('name', 'id'))
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->disabled(false)
+                            ->placeholder('Select staff member'),
                             
                         Forms\Components\Textarea::make('resolution')
                             ->rows(3)
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->disabled(false)
+                            ->placeholder('Enter resolution details...'),
                             
                         Forms\Components\DateTimePicker::make('resolved_at')
-                            ->label('Resolved At'),
+                            ->label('Resolved At')
+                            ->disabled(false),
                     ])
                     ->columns(2),
             ]);
