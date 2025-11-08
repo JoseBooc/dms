@@ -102,10 +102,11 @@
                                             @elseif($complaint->status === 'investigating')
                                                 <x-filament::button 
                                                     size="sm" 
-                                                    color="success"
+                                                    color="warning"
+                                                    class="btn-mark-action"
                                                     wire:click.stop="updateStatus({{ $complaint->id }}, 'resolved')"
                                                 >
-                                                    Resolve
+                                                    Mark as Resolved
                                                 </x-filament::button>
                                             @endif
                                         </td>
@@ -210,8 +211,12 @@
                                 Start Investigation
                             </x-filament::button>
                         @elseif($selectedComplaint->status === 'investigating')
-                            <x-filament::button color="success" wire:click="updateStatus({{ $selectedComplaint->id }}, 'resolved')">
-                                Mark Resolved
+                            <x-filament::button 
+                                color="warning"
+                                class="btn-mark-action"
+                                wire:click="updateStatus({{ $selectedComplaint->id }}, 'resolved')"
+                            >
+                                Mark as Resolved
                             </x-filament::button>
                         @endif
                     </div>

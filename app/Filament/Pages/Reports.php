@@ -119,7 +119,7 @@ class Reports extends Page implements HasForms
         $startDate = Carbon::parse($this->start_date);
         $endDate = Carbon::parse($this->end_date);
         
-        return $this->reportsService->getFinancialReport($startDate, $endDate);
+        return $this->reportsService->getFinancialReport($this->period, $startDate, $endDate);
     }
 
     public function getMaintenanceReportData(): array
@@ -127,7 +127,7 @@ class Reports extends Page implements HasForms
         $startDate = Carbon::parse($this->start_date);
         $endDate = Carbon::parse($this->end_date);
         
-        return $this->reportsService->getMaintenanceReport($startDate, $endDate);
+        return $this->reportsService->getMaintenanceReport($this->period, $startDate, $endDate);
     }
 
     public function getDashboardSummaryData(): array

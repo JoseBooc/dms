@@ -166,4 +166,12 @@ class Bill extends Model
                           ->orWhere('bills.amount_paid', 0);
                     });
     }
+
+    /**
+     * Get deposit deductions related to this bill
+     */
+    public function depositDeductions()
+    {
+        return $this->hasMany(DepositDeduction::class);
+    }
 }

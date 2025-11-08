@@ -91,16 +91,6 @@ class TenantMaintenanceRequestResource extends Resource
                     ->rows(4)
                     ->columnSpanFull(),
                     
-                Forms\Components\FileUpload::make('photos')
-                    ->label('Photos (Optional)')
-                    ->image()
-                    ->multiple()
-                    ->maxFiles(5)
-                    ->disk('public')
-                    ->directory('maintenance-photos')
-                    ->helperText('Upload up to 5 photos to help describe the issue')
-                    ->columnSpanFull(),
-                    
                 // Hidden fields that will be auto-filled
                 Forms\Components\Hidden::make('tenant_id')
                     ->default($tenant?->id),
@@ -152,13 +142,7 @@ class TenantMaintenanceRequestResource extends Resource
                     ])
                     ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state))),
                     
-                Tables\Columns\ImageColumn::make('photos')
-                    ->label('Photos')
-                    ->disk('public')
-                    ->size(40)
-                    ->getStateUsing(function ($record) {
-                        return $record->photos ? $record->photos[0] ?? null : null;
-                    }),
+
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')

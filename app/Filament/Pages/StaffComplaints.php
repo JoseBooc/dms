@@ -80,11 +80,19 @@ class StaffComplaints extends Page implements HasForms
 
         $complaint->update($updateData);
         
-        Notification::make()
-            ->title('Status Updated')
-            ->body("Complaint #{$complaintId} status updated to {$status}")
-            ->success()
-            ->send();
+        if ($status === 'resolved') {
+            Notification::make()
+                ->title('Complaint Marked as Resolved')
+                ->body("Complaint #{$complaintId} has been marked as resolved")
+                ->success()
+                ->send();
+        } else {
+            Notification::make()
+                ->title('Status Updated')
+                ->body("Complaint #{$complaintId} status updated to {$status}")
+                ->success()
+                ->send();
+        }
     }
 
     public function openDetailsModal($complaintId)

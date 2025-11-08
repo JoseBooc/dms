@@ -42,13 +42,7 @@
                     @enderror
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Photos (optional)</label>
-                    <input type="file" name="photos[]" class="form-control @error('photos.*') is-invalid @enderror" multiple accept="image/*">
-                    @error('photos.*')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+
 
                 <div class="d-flex justify-content-end gap-2">
                     <a href="{{ route('maintenance-requests.index') }}" class="btn btn-secondary">Cancel</a>

@@ -155,4 +155,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(Complaint::class, 'assigned_to');
     }
+
+    /**
+     * Get deposits for this user (if tenant).
+     */
+    public function deposits()
+    {
+        return $this->hasMany(Deposit::class, 'tenant_id');
+    }
+
+    /**
+     * Get the current active deposit for this user.
+     */
+    public function currentDeposit()
+    {
+        return $this->deposits()->where('status', 'active')->latest()->first();
+    }
 }

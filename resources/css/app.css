@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom orange buttons for mark as completed/resolved actions */
+.btn-mark-action {
+    @apply bg-orange-500 text-white border-orange-500 hover:bg-orange-600 hover:border-orange-600 focus:ring-orange-500;
+    box-shadow: 0 1px 3px 0 rgba(249, 115, 22, 0.1), 0 1px 2px 0 rgba(249, 115, 22, 0.06);
+}
+
+.btn-mark-action:hover {
+    box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.1), 0 2px 4px -1px rgba(249, 115, 22, 0.06);
+}
+
+/* Ensure Filament buttons respect our custom styling */
+.filament-button.btn-mark-action {
+    background-color: #f97316 !important;
+    border-color: #f97316 !important;
+    color: white !important;
+}
+
+.filament-button.btn-mark-action:hover {
+    background-color: #ea580c !important;
+    border-color: #ea580c !important;
+}

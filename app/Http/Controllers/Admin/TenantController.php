@@ -103,7 +103,6 @@ class TenantController extends Controller
             'current_address' => 'nullable|string',
             'id_type' => 'required|string|max:255',
             'id_number' => 'required|string|max:255',
-            'id_image_path' => 'nullable|string|max:255',
             'remarks' => 'nullable|string',
         ]);
 

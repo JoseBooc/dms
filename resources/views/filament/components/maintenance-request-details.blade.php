@@ -41,22 +41,10 @@
         </div>
     @endif
 
-    @if($request->status === 'completed' && $request->completion_proof)
+    @if($request->status === 'completed' && $request->completion_notes)
         <div class="border-t pt-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Completion Proof</label>
-            
-            @if($request->completion_notes)
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Notes</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ $request->completion_notes }}</p>
-                </div>
-            @endif
-            
-            <div class="grid grid-cols-2 gap-2">
-                @foreach($request->completion_proof as $photo)
-                    <img src="{{ Storage::url($photo) }}" alt="Completion proof" class="w-full h-32 object-cover rounded-lg border">
-                @endforeach
-            </div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Completion Notes</label>
+            <p class="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded">{{ $request->completion_notes }}</p>
         </div>
     @endif
 

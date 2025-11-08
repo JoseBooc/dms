@@ -252,11 +252,6 @@ class TenantResource extends Resource
                             ->required()
                             ->maxLength(255),
                         
-                        Forms\Components\FileUpload::make('id_image_path')
-                            ->label('ID Image')
-                            ->image()
-                            ->directory('tenant-ids'),
-                        
                         Forms\Components\Textarea::make('remarks')
                             ->maxLength(1000)
                             ->columnSpanFull(),

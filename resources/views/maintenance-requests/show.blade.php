@@ -30,19 +30,6 @@
         </div>
     </div>
 
-    @if($maintenance_request->photos)
-        <div class="card">
-            <div class="card-header">Photos</div>
-            <div class="card-body">
-                <div class="row">
-                    @foreach($maintenance_request->photos as $photo)
-                        <div class="col-6 col-md-3 mb-3">
-                            <img src="{{ asset('storage/' . $photo) }}" class="img-fluid rounded">
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    @endif
+
 </div>
 @endsection
