@@ -18,11 +18,46 @@ class Room extends Model
         'description',
         'current_occupants',
         'hidden',
+        'is_hidden',
+        'status_before_hidden',
     ];
 
     protected $casts = [
         'rate' => 'decimal:2',
+        'is_hidden' => 'boolean',
+        'hidden' => 'boolean',
     ];
+
+    /**
+     * Boot method to handle status changes when hiding/unhiding
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Before updating, handle status changes for hide/unhide
+        static::updating(function ($room) {
+            // If is_hidden is being changed to true (hiding the room)
+            if ($room->isDirty('is_hidden') && $room->is_hidden === true) {
+                // Save current status before hiding
+                $room->status_before_hidden = $room->getOriginal('status');
+                // Set status to unavailable
+                $room->status = 'unavailable';
+            }
+            
+            // If is_hidden is being changed to false (unhiding the room)
+            if ($room->isDirty('is_hidden') && $room->is_hidden === false) {
+                // Restore previous status if it was saved
+                if ($room->status_before_hidden) {
+                    $room->status = $room->status_before_hidden;
+                    $room->status_before_hidden = null;
+                } else {
+                    // Default to available if no previous status
+                    $room->status = 'available';
+                }
+            }
+        });
+    }
 
     // Relationships
     public function currentTenant()
@@ -112,5 +147,29 @@ class Room extends Model
     public function hasAvailableSpace(): bool
     {
         return $this->current_occupants < $this->capacity;
+    }
+
+    /**
+     * Check if room is hidden
+     */
+    public function isHidden(): bool
+    {
+        return $this->is_hidden === true;
+    }
+
+    /**
+     * Hide this room
+     */
+    public function hide(): void
+    {
+        $this->update(['is_hidden' => true]);
+    }
+
+    /**
+     * Unhide this room
+     */
+    public function unhide(): void
+    {
+        $this->update(['is_hidden' => false]);
     }
 }

@@ -98,7 +98,9 @@ class RoomResource extends Resource
                     ->dehydrated()
                     ->helperText('Automatically updated based on active room assignments'),
                 
-                Forms\Components\Toggle::make('hidden')
+                Forms\Components\Toggle::make('is_hidden')
+                    ->label('Hidden')
+                    ->helperText('Hidden rooms will not be visible in listings')
                     ->default(false),
             ]);
     }
@@ -136,14 +138,21 @@ class RoomResource extends Resource
                     ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
                     ->sortable(),
                 
+                Tables\Columns\BadgeColumn::make('visibility_status')
+                    ->label('Visibility')
+                    ->getStateUsing(fn (Room $record): string => $record->is_hidden ? 'hidden' : 'visible')
+                    ->colors([
+                        'success' => 'visible',
+                        'danger' => 'hidden',
+                    ])
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                
                 Tables\Columns\BadgeColumn::make('status')
                     ->colors([
                         'success' => 'available',
                         'warning' => 'occupied',
                         'danger' => 'unavailable',
                     ]),
-                
-                Tables\Columns\BooleanColumn::make('hidden'),
                 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -163,12 +172,90 @@ class RoomResource extends Resource
                         'single' => 'Single',
                         'double' => 'Double',
                     ]),
+                
+                Tables\Filters\Filter::make('is_hidden')
+                    ->label('Visibility')
+                    ->query(fn (Builder $query): Builder => $query->where('is_hidden', true))
+                    ->toggle(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                
+                Tables\Actions\Action::make('toggleHide')
+                    ->label(fn (Room $record): string => $record->is_hidden ? 'Unhide' : 'Hide')
+                    ->icon(fn (Room $record): string => $record->is_hidden ? 'heroicon-o-eye' : 'heroicon-o-eye-off')
+                    ->color(fn (Room $record): string => $record->is_hidden ? 'success' : 'warning')
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (Room $record): string => $record->is_hidden ? 'Unhide Room' : 'Hide Room')
+                    ->modalSubheading(fn (Room $record): string => 
+                        $record->is_hidden 
+                            ? 'Are you sure you want to unhide room ' . $record->room_number . '? It will be visible in listings again.'
+                            : 'Are you sure you want to hide room ' . $record->room_number . '? It will not appear in listings but all data will be preserved.'
+                    )
+                    ->action(function (Room $record) {
+                        if ($record->is_hidden) {
+                            $record->unhide();
+                            \Filament\Notifications\Notification::make()
+                                ->title('Room Unhidden')
+                                ->success()
+                                ->body("Room {$record->room_number} is now visible.")
+                                ->send();
+                        } else {
+                            $record->hide();
+                            \Filament\Notifications\Notification::make()
+                                ->title('Room Hidden')
+                                ->warning()
+                                ->body("Room {$record->room_number} has been hidden successfully.")
+                                ->send();
+                        }
+                    }),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\BulkAction::make('hideSelected')
+                    ->label('Hide Selected')
+                    ->icon('heroicon-o-eye-off')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Hide Selected Rooms')
+                    ->modalSubheading('Are you sure you want to hide the selected rooms? They will not appear in listings but all data will be preserved.')
+                    ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        $hidden = 0;
+                        foreach ($records as $record) {
+                            if (!$record->is_hidden) {
+                                $record->hide();
+                                $hidden++;
+                            }
+                        }
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Rooms Hidden')
+                            ->success()
+                            ->body("{$hidden} room(s) have been hidden successfully.")
+                            ->send();
+                    }),
+                
+                Tables\Actions\BulkAction::make('unhideSelected')
+                    ->label('Unhide Selected')
+                    ->icon('heroicon-o-eye')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Unhide Selected Rooms')
+                    ->modalSubheading('Are you sure you want to unhide the selected rooms? They will be visible in listings again.')
+                    ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        $unhidden = 0;
+                        foreach ($records as $record) {
+                            if ($record->is_hidden) {
+                                $record->unhide();
+                                $unhidden++;
+                            }
+                        }
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Rooms Unhidden')
+                            ->success()
+                            ->body("{$unhidden} room(s) are now visible.")
+                            ->send();
+                    }),
             ]);
     }
     

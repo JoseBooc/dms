@@ -141,6 +141,38 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is blocked.
+     */
+    public function isBlocked(): bool
+    {
+        return $this->status === 'blocked';
+    }
+
+    /**
+     * Check if user is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    /**
+     * Block this user.
+     */
+    public function block(): void
+    {
+        $this->update(['status' => 'blocked']);
+    }
+
+    /**
+     * Unblock this user.
+     */
+    public function unblock(): void
+    {
+        $this->update(['status' => 'active']);
+    }
+
+    /**
      * Get complaints submitted by this user (if tenant).
      */
     public function complaints()

@@ -6,6 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Filament\Facades\Filament;
 use Livewire\Livewire;
 use App\Http\Livewire\NotificationDropdown;
+use App\Models\Bill;
+use App\Observers\BillObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Register observers
+        Bill::observe(BillObserver::class);
+
         // Register the Livewire component
         Livewire::component('notification-dropdown', NotificationDropdown::class);
 

@@ -12,6 +12,13 @@ class CreateTenant extends CreateRecord
 {
     protected static string $resource = TenantResource::class;
 
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+        ];
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Create the user first
@@ -30,11 +37,32 @@ class CreateTenant extends CreateRecord
         // Set the user_id for the tenant
         $data['user_id'] = $user->id;
         $data['personal_email'] = $data['email'];
+        
+        // Set default values for removed fields (all-girls dormitory)
+        $data['gender'] = 'female';
+        $data['nationality'] = 'Filipino';
+        $data['civil_status'] = 'single';
+        
+        // Set default values for removed identification fields
+        $data['id_type'] = 'student_id';
+        $data['id_number'] = 'N/A';
+        $data['remarks'] = null;
 
         // Remove user-specific fields from tenant data
         unset($data['email'], $data['password']);
+        
+        // Log data for debugging
+        \Log::info('Tenant data before create:', $data);
 
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        \Log::info('Tenant created successfully:', [
+            'tenant_id' => $this->record->id,
+            'user_id' => $this->record->user_id,
+        ]);
     }
 
     protected function getCancelledRedirectUrl(): string

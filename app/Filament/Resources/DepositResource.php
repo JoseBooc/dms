@@ -8,12 +8,17 @@ use App\Models\Deposit;
 use App\Models\User;
 use App\Models\RoomAssignment;
 use App\Models\Bill;
+use App\Services\DepositService;
+use App\Services\FinancialTransactionService;
+use App\Services\AuditLogService;
+use App\Helpers\CurrencyHelper;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Closure;
@@ -110,25 +115,44 @@ class DepositResource extends Resource
                                     ->step(0.01)
                                     ->prefix('₱')
                                     ->reactive()
+                                    ->rule('numeric')
+                                    ->rule('min:0')
                                     ->afterStateUpdated(function (callable $set, callable $get, $state) {
-                                        $deductions = $get('deductions_total') ?? 0;
-                                        $set('refundable_amount', max(0, $state - $deductions));
-                                    }),
+                                        // Ensure non-negative
+                                        $depositAmount = max(0, floatval($state ?? 0));
+                                        $deductions = max(0, floatval($get('deductions_total') ?? 0));
+                                        
+                                        // Calculate refundable amount: max(0, deposit - deductions)
+                                        $refundable = max(0, $depositAmount - $deductions);
+                                        $set('refundable_amount', number_format($refundable, 2, '.', ''));
+                                    })
+                                    ->helperText('Must be a positive number'),
 
                                 Forms\Components\TextInput::make('deductions_total')
                                     ->label('Total Deductions')
                                     ->numeric()
                                     ->default(0)
+                                    ->minValue(0)
                                     ->prefix('₱')
-                                    ->disabled()
-                                    ->dehydrated(),
+                                    ->reactive()
+                                    ->afterStateUpdated(function (callable $set, callable $get, $state) {
+                                        // Ensure non-negative
+                                        $deductions = max(0, floatval($state ?? 0));
+                                        $depositAmount = max(0, floatval($get('amount') ?? 0));
+                                        
+                                        // Calculate refundable amount: max(0, deposit - deductions)
+                                        $refundable = max(0, $depositAmount - $deductions);
+                                        $set('refundable_amount', number_format($refundable, 2, '.', ''));
+                                    })
+                                    ->helperText('Automatically calculated from deductions'),
 
                                 Forms\Components\TextInput::make('refundable_amount')
                                     ->label('Refundable Amount')
                                     ->numeric()
                                     ->prefix('₱')
                                     ->disabled()
-                                    ->dehydrated(),
+                                    ->dehydrated()
+                                    ->helperText('Auto-computed: Deposit Amount - Total Deductions'),
                             ]),
 
                         Forms\Components\Grid::make(2)
@@ -190,18 +214,22 @@ class DepositResource extends Resource
 
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Amount')
-                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
-                    ->sortable(),
+                    ->formatStateUsing(fn ($state) => CurrencyHelper::format($state))
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('deductions_total')
                     ->label('Deductions')
-                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
-                    ->sortable(),
+                    ->formatStateUsing(fn ($state) => CurrencyHelper::format($state))
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('refundable_amount')
                     ->label('Refundable')
-                    ->formatStateUsing(fn ($state) => '₱' . number_format($state, 2))
-                    ->sortable(),
+                    ->formatStateUsing(fn ($state) => CurrencyHelper::format($state))
+                    ->sortable()
+                    ->toggleable()
+                    ->weight('bold'),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
@@ -243,10 +271,10 @@ class DepositResource extends Resource
                             ->label('Deduction Type')
                             ->options([
                                 'unpaid_rent' => 'Unpaid Rent',
-                                'damage_charge' => 'Damage Charge', 
-                                'cleaning_fee' => 'Cleaning Fee',
-                                'utility_arrears' => 'Utility Arrears',
-                                'other' => 'Other',
+                                'unpaid_electricity' => 'Unpaid Electricity',
+                                'unpaid_water' => 'Unpaid Water',
+                                'penalty' => 'Penalty',
+                                'damage' => 'Damage',
                             ])
                             ->required(),
 
@@ -294,64 +322,70 @@ class DepositResource extends Resource
                     ->label('Process Refund')
                     ->icon('heroicon-o-cash')
                     ->color('success')
-                    ->visible(fn (Deposit $record) => $record->canBeRefunded())
+                    ->visible(fn (Deposit $record) => $record->refundable_amount > 0 && in_array($record->status, ['active', 'partially_refunded']))
+                    ->authorize('refund')
                     ->requiresConfirmation()
                     ->modalHeading('Process Deposit Refund')
                     ->modalSubheading(fn (Deposit $record) => 
-                        'Refund ₱' . number_format($record->refundable_amount, 2) . ' to ' . 
+                        'Refund ' . CurrencyHelper::format($record->refundable_amount) . ' to ' . 
                         $record->tenant->first_name . ' ' . $record->tenant->last_name
                     )
                     ->form([
+                        Forms\Components\Select::make('refund_method')
+                            ->label('Refund Method')
+                            ->options([
+                                'cash' => 'Cash',
+                                'gcash' => 'GCash',
+                                'bank_transfer' => 'Bank Transfer',
+                                'other' => 'Other',
+                            ])
+                            ->default('cash')
+                            ->required(),
+                        Forms\Components\TextInput::make('reference_number')
+                            ->label('Reference Number')
+                            ->maxLength(255)
+                            ->placeholder('Optional'),
                         Forms\Components\Textarea::make('refund_notes')
                             ->label('Refund Notes')
                             ->placeholder('Enter any notes about the refund...')
                             ->rows(3),
                     ])
                     ->action(function (Deposit $record, array $data) {
-                        try {
-                            $record->processRefund($data['refund_notes'] ?? null);
+                        DB::transaction(function () use ($record, $data) {
+                            $depositService = app(DepositService::class);
+                            $financialService = app(FinancialTransactionService::class);
+                            $auditService = app(AuditLogService::class);
 
-                            Notification::make()
-                                ->title('Deposit Refunded Successfully')
-                                ->success()
-                                ->send();
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->title('Error Processing Refund')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                            $refundAmount = $record->refundable_amount;
+                            $oldStatus = $record->status;
 
-                Tables\Actions\Action::make('processRefund')
-                    ->label('Process Refund')
-                    ->icon('heroicon-o-cash')
-                    ->color('success')
-                    ->visible(fn (Deposit $record) => $record->canBeRefunded())
-                    ->requiresConfirmation()
-                    ->modalHeading('Process Deposit Refund')
-                    ->form([
-                        Forms\Components\Textarea::make('refund_notes')
-                            ->label('Refund Notes')
-                            ->placeholder('Enter any notes about the refund...')
-                            ->rows(3),
-                    ])
-                    ->action(function (Deposit $record, array $data) {
-                        try {
-                            $record->processRefund($data['refund_notes'] ?? null);
+                            // Process refund through service
+                            $deposit = $depositService->processRefund(
+                                $record,
+                                $data['refund_method'] ?? 'cash',
+                                $data['reference_number'] ?? null,
+                                $data['refund_notes'] ?? null
+                            );
 
-                            Notification::make()
-                                ->title('Deposit Refunded Successfully')
-                                ->success()
-                                ->send();
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->title('Error Processing Refund')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-                        }
+                            // Log financial transaction
+                            $financialService->logDepositRefund($deposit, $refundAmount);
+
+                            // Log audit entry
+                            $auditService->log($deposit, 'deposit_refunded', [
+                                'old_status' => $oldStatus,
+                                'refundable_amount' => $refundAmount,
+                            ], [
+                                'new_status' => $deposit->status,
+                                'refund_method' => $data['refund_method'],
+                                'reference_number' => $data['reference_number'] ?? null,
+                            ], 'Deposit refund of ' . CurrencyHelper::format($refundAmount) . ' processed');
+                        });
+
+                        Notification::make()
+                            ->success()
+                            ->title('Deposit Refunded')
+                            ->body('Refund processed successfully')
+                            ->send();
                     }),
 
                 Tables\Actions\EditAction::make(),
@@ -377,6 +411,12 @@ class DepositResource extends Resource
         return [
             RelationManagers\DeductionsRelationManager::class,
         ];
+    }
+    
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['tenant', 'roomAssignment.room']);
     }
     
     public static function getPages(): array

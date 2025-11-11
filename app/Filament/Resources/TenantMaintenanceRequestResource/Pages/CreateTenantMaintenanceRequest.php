@@ -10,6 +10,13 @@ class CreateTenantMaintenanceRequest extends CreateRecord
 {
     protected static string $resource = TenantMaintenanceRequestResource::class;
 
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+        ];
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');

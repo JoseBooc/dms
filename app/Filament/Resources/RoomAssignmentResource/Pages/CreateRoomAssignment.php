@@ -9,4 +9,11 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateRoomAssignment extends CreateRecord
 {
     protected static string $resource = RoomAssignmentResource::class;
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+        ];
+    }
 }

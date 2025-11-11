@@ -113,28 +113,6 @@ class TenantResource extends Resource
                             ->maxDate(now()->subYears(18))
                             ->helperText('You must be at least 18 years old to register.'),
                         
-                        Forms\Components\Select::make('gender')
-                            ->options([
-                                'female' => 'Female',
-                            ])
-                            ->default('female')
-                            ->required(),
-                        
-                        Forms\Components\TextInput::make('nationality')
-                            ->required()
-                            ->maxLength(255)
-                            ->rules([
-                                'regex:/^[a-zA-Z\s\-\']+$/',
-                            ])
-                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
-                        
-                        Forms\Components\TextInput::make('occupation')
-                            ->maxLength(255)
-                            ->rules([
-                                'regex:/^[a-zA-Z\s\-\']+$/',
-                            ])
-                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
-                        
                         Forms\Components\TextInput::make('school')
                             ->required()
                             ->maxLength(255)
@@ -150,16 +128,6 @@ class TenantResource extends Resource
                                 'regex:/^[a-zA-Z\s\-\']+$/',
                             ])
                             ->helperText('Letters, spaces, hyphens, and apostrophes only'),
-                        
-                        Forms\Components\Select::make('civil_status')
-                            ->options([
-                                'single' => 'Single',
-                                'married' => 'Married',
-                                'divorced' => 'Divorced',
-                                'widowed' => 'Widowed',
-                                'separated' => 'Separated',
-                            ])
-                            ->required(),
                     ])
                     ->columns(2),
                 
@@ -170,17 +138,9 @@ class TenantResource extends Resource
                             ->required()
                             ->maxLength(20),
                         
-                        Forms\Components\TextInput::make('alternative_phone')
-                            ->tel()
-                            ->maxLength(20),
-                        
                         Forms\Components\Textarea::make('permanent_address')
                             ->label('Permanent Address')
                             ->required()
-                            ->maxLength(500),
-                        
-                        Forms\Components\Textarea::make('current_address')
-                            ->label('Current Address (if different from the Permanent address)')
                             ->maxLength(500),
                     ])
                     ->columns(2),
@@ -191,70 +151,31 @@ class TenantResource extends Resource
                             ->label('First Name')
                             ->required()
                             ->maxLength(255)
-                            ->rules(['regex:/^[a-zA-Z\s\-\']+$/']),
-                        
-                        Forms\Components\TextInput::make('emergency_contact_middle_name')
-                            ->label('Middle Name')
-                            ->maxLength(255)
-                            ->rules(['regex:/^[a-zA-Z\s\-\']+$/']),
+                            ->rules(['regex:/^[a-zA-Z\s\-\']+$/'])
+                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
                         
                         Forms\Components\TextInput::make('emergency_contact_last_name')
                             ->label('Last Name')
                             ->required()
                             ->maxLength(255)
-                            ->rules(['regex:/^[a-zA-Z\s\-\']+$/']),
+                            ->rules(['regex:/^[a-zA-Z\s\-\']+$/'])
+                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
                         
                         Forms\Components\TextInput::make('emergency_contact_relationship')
                             ->label('Relationship with Tenant')
                             ->required()
                             ->maxLength(100)
-                            ->placeholder('e.g., Mother, Father, Sister, Guardian'),
+                            ->rules(['regex:/^[a-zA-Z\s\-\']+$/'])
+                            ->placeholder('e.g., Mother, Father, Sister, Guardian')
+                            ->helperText('Letters, spaces, hyphens, and apostrophes only'),
                         
                         Forms\Components\TextInput::make('emergency_contact_phone')
                             ->label('Phone Number')
                             ->tel()
                             ->required()
-                            ->maxLength(20),
-                        
-                        Forms\Components\TextInput::make('emergency_contact_alternative_phone')
-                            ->label('Alternative Phone')
-                            ->tel()
-                            ->maxLength(20),
-                        
-                        Forms\Components\Textarea::make('emergency_contact_address')
-                            ->label('Address')
-                            ->required()
-                            ->maxLength(500),
-                        
-                        Forms\Components\TextInput::make('emergency_contact_email')
-                            ->label('Email')
-                            ->email()
-                            ->maxLength(255),
-                    ])
-                    ->columns(2),
-                
-                Forms\Components\Section::make('Identification')
-                    ->schema([
-                        Forms\Components\Select::make('id_type')
-                            ->label('ID Type')
-                            ->options([
-                                'drivers_license' => 'Driver\'s License',
-                                'passport' => 'Passport',
-                                'national_id' => 'National ID',
-                                'student_id' => 'Student ID',
-                                'sss_id' => 'SSS ID',
-                                'philhealth_id' => 'PhilHealth ID',
-                            ])
-                            ->required(),
-                        
-                        Forms\Components\TextInput::make('id_number')
-                            ->label('ID Number')
-                            ->required()
-                            ->maxLength(255),
-                        
-                        Forms\Components\Textarea::make('remarks')
-                            ->maxLength(1000)
-                            ->columnSpanFull(),
+                            ->maxLength(20)
+                            ->rules(['regex:/^[\d\+\(\)\-\s]+$/'])
+                            ->helperText('Numbers, +, (), -, and spaces allowed'),
                     ])
                     ->columns(2),
             ]);
@@ -307,7 +228,7 @@ class TenantResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                // Delete bulk action removed - tenants should not be deleted to preserve data integrity
             ]);
     }
     

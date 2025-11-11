@@ -59,7 +59,7 @@ class TenantAnalytics extends Page
             return;
         }
 
-        // Get current room assignment
+        // Get current room assignment with room in single query
         $this->currentAssignment = RoomAssignment::where('tenant_id', $tenant->id)
             ->where('status', 'active')
             ->with('room')
@@ -117,8 +117,10 @@ class TenantAnalytics extends Page
 
     protected function calculateFinancialStats($tenant): array
     {
-        // Bills reference users table via tenant_id, and tenant belongs to user via user_id
-        $bills = Bill::where('tenant_id', $tenant->user_id)->get();
+        // Bills reference users table via tenant_id - fetch once and cache
+        $bills = Bill::where('tenant_id', $tenant->user_id)
+            ->select('id', 'tenant_id', 'total_amount', 'penalty_amount', 'status', 'bill_date', 'due_date')
+            ->get();
         
         $totalBilled = $bills->sum(function($bill) {
             return $bill->total_amount + ($bill->penalty_amount ?? 0);
@@ -153,10 +155,14 @@ class TenantAnalytics extends Page
 
     protected function calculateActivityStats($tenant): array
     {
-        // Maintenance requests use tenant_id to reference tenants.id
-        $maintenanceRequests = MaintenanceRequest::where('tenant_id', $tenant->id)->get();
-        // Complaints use tenant_id to reference users.id, so we use user_id from tenant
-        $complaints = Complaint::where('tenant_id', $tenant->user_id)->get();
+        // Fetch only required columns to reduce memory usage
+        $maintenanceRequests = MaintenanceRequest::where('tenant_id', $tenant->id)
+            ->select('id', 'tenant_id', 'status', 'created_at', 'updated_at')
+            ->get();
+        
+        $complaints = Complaint::where('tenant_id', $tenant->user_id)
+            ->select('id', 'tenant_id', 'status', 'created_at', 'resolved_at')
+            ->get();
         
         return [
             'total_maintenance_requests' => $maintenanceRequests->count(),
@@ -222,8 +228,9 @@ class TenantAnalytics extends Page
     {
         $activities = collect();
         
-        // Get recent bills (bills use tenant_id to reference users.id)
+        // Get recent bills - only select needed columns
         $recentBills = Bill::where('tenant_id', $tenant->user_id)
+            ->select('id', 'tenant_id', 'bill_type', 'total_amount', 'status', 'created_at')
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
@@ -240,8 +247,9 @@ class TenantAnalytics extends Page
             ]);
         }
         
-        // Get recent maintenance requests (maintenance uses tenant_id to reference tenants.id)
+        // Get recent maintenance requests - only select needed columns
         $recentMaintenance = MaintenanceRequest::where('tenant_id', $tenant->id)
+            ->select('id', 'tenant_id', 'description', 'status', 'created_at')
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
@@ -258,8 +266,9 @@ class TenantAnalytics extends Page
             ]);
         }
         
-        // Get recent complaints (complaints use tenant_id to reference users.id)
+        // Get recent complaints - only select needed columns
         $recentComplaints = Complaint::where('tenant_id', $tenant->user_id)
+            ->select('id', 'tenant_id', 'title', 'category', 'status', 'created_at')
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();

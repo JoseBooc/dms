@@ -9,4 +9,11 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateUtilityType extends CreateRecord
 {
     protected static string $resource = UtilityTypeResource::class;
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+        ];
+    }
 }

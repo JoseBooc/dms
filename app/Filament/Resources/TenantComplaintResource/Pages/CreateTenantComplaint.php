@@ -11,6 +11,13 @@ class CreateTenantComplaint extends CreateRecord
 {
     protected static string $resource = TenantComplaintResource::class;
 
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+        ];
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $user = Auth::user();

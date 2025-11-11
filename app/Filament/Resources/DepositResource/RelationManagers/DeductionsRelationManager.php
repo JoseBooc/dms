@@ -27,10 +27,10 @@ class DeductionsRelationManager extends RelationManager
                             ->label('Deduction Type')
                             ->options([
                                 'unpaid_rent' => 'Unpaid Rent',
-                                'damage_charge' => 'Damage Charge',
-                                'cleaning_fee' => 'Cleaning Fee',
-                                'utility_arrears' => 'Utility Arrears',
-                                'other' => 'Other',
+                                'unpaid_electricity' => 'Unpaid Electricity',
+                                'unpaid_water' => 'Unpaid Water',
+                                'penalty' => 'Penalty',
+                                'damage' => 'Damage',
                             ])
                             ->required(),
 
@@ -87,18 +87,17 @@ class DeductionsRelationManager extends RelationManager
                     ->label('Type')
                     ->formatStateUsing(fn ($state) => match($state) {
                         'unpaid_rent' => 'Unpaid Rent',
-                        'damage_charge' => 'Damage Charge',
-                        'cleaning_fee' => 'Cleaning Fee',
-                        'utility_arrears' => 'Utility Arrears',
-                        'other' => 'Other',
+                        'unpaid_electricity' => 'Unpaid Electricity',
+                        'unpaid_water' => 'Unpaid Water',
+                        'penalty' => 'Penalty',
+                        'damage' => 'Damage',
                         default => ucfirst(str_replace('_', ' ', $state)),
                     })
                     ->colors([
                         'danger' => 'unpaid_rent',
-                        'warning' => 'damage_charge',
-                        'secondary' => 'cleaning_fee',
-                        'primary' => 'utility_arrears',
-                        'success' => 'other',
+                        'warning' => ['unpaid_electricity', 'unpaid_water'],
+                        'secondary' => 'penalty',
+                        'primary' => 'damage',
                     ]),
 
                 Tables\Columns\TextColumn::make('description')
@@ -128,11 +127,17 @@ class DeductionsRelationManager extends RelationManager
                 Tables\Filters\SelectFilter::make('deduction_type')
                     ->options([
                         'unpaid_rent' => 'Unpaid Rent',
-                        'damage_charge' => 'Damage Charge',
-                        'cleaning_fee' => 'Cleaning Fee',
-                        'utility_arrears' => 'Utility Arrears',
-                        'other' => 'Other',
+                        'unpaid_electricity' => 'Unpaid Electricity',
+                        'unpaid_water' => 'Unpaid Water',
+                        'penalty' => 'Penalty',
+                        'damage' => 'Damage',
                     ]),
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Archived Deductions')
+                    ->placeholder('Active Only')
+                    ->trueLabel('Archived Only')
+                    ->falseLabel('Active Only')
+                    ->default(false),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
@@ -142,9 +147,8 @@ class DeductionsRelationManager extends RelationManager
                         // Create the deduction
                         $deduction = $deposit->deductions()->create($data);
                         
-                        // Update deposit totals
-                        $deposit->deductions_total += $data['amount'];
-                        $deposit->updateRefundableAmount();
+                        // Recalculate totals from active deductions only
+                        $deposit->recalculateDeductionsTotal();
                         $deposit->updateStatus();
                         
                         return $deduction;
@@ -157,29 +161,65 @@ class DeductionsRelationManager extends RelationManager
                     ),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
-                    ->using(function (RelationManager $livewire, $record) {
+                Tables\Actions\EditAction::make()
+                    ->visible(fn ($record) => !$record->trashed()),
+                    
+                Tables\Actions\Action::make('archive')
+                    ->label('Archive')
+                    ->icon('heroicon-o-archive')
+                    ->color('warning')
+                    ->visible(fn ($record) => !$record->trashed())
+                    ->requiresConfirmation()
+                    ->modalHeading('Archive Deduction')
+                    ->modalSubheading('Archive this deduction? You can restore it later.')
+                    ->modalButton('Archive')
+                    ->action(function (RelationManager $livewire, $record) {
                         $deposit = $livewire->ownerRecord;
                         
-                        // Update deposit totals before deleting
-                        $deposit->deductions_total -= $record->amount;
-                        $deposit->updateRefundableAmount();
+                        // Soft delete the deduction
+                        $record->delete();
+                        
+                        // Recalculate totals from active deductions only
+                        $deposit->recalculateDeductionsTotal();
                         $deposit->updateStatus();
                         
-                        $record->delete();
-                    })
-                    ->successNotification(
                         Notification::make()
                             ->success()
-                            ->title('Deduction removed successfully')
-                            ->body('The deposit amounts have been updated.')
-                    ),
+                            ->title('Deduction Archived')
+                            ->body('The deduction has been archived and can be restored later.')
+                            ->send();
+                    }),
+                    
+                Tables\Actions\Action::make('restore')
+                    ->label('Restore')
+                    ->icon('heroicon-o-reply')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->trashed())
+                    ->requiresConfirmation()
+                    ->modalHeading('Restore Deduction')
+                    ->modalSubheading('Restore this archived deduction?')
+                    ->modalButton('Restore')
+                    ->action(function (RelationManager $livewire, $record) {
+                        $deposit = $livewire->ownerRecord;
+                        
+                        // Restore the deduction
+                        $record->restore();
+                        
+                        // Recalculate totals from active deductions only
+                        $deposit->recalculateDeductionsTotal();
+                        $deposit->updateStatus();
+                        
+                        Notification::make()
+                            ->success()
+                            ->title('Deduction Restored')
+                            ->body('The deduction has been restored successfully.')
+                            ->send();
+                    }),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make()
-                    ->visible(fn () => auth()->user()->isAdmin()),
+                // Bulk delete removed - use archive actions instead
             ])
-            ->defaultSort('deduction_date', 'desc');
+            ->defaultSort('deduction_date', 'desc')
+            ->modifyQueryUsing(fn (Builder $query) => $query->withTrashed());
     }    
 }

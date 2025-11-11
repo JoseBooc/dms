@@ -155,7 +155,7 @@ class RoomAssignmentResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                // Delete function removed - use status changes instead
             ]);
     }
     

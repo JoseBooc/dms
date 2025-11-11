@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class Complaint extends Model
 {
@@ -28,6 +29,7 @@ class Complaint extends Model
         'resolved_at' => 'datetime'
     ];
 
+    // Relationships
     public function tenant()
     {
         return $this->belongsTo(User::class, 'tenant_id')->withDefault([
@@ -44,5 +46,57 @@ class Complaint extends Model
     public function assignedTo()
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    // Scopes
+    public function scopeByStatus(Builder $query, string $status): Builder
+    {
+        return $query->where('status', $status);
+    }
+
+    public function scopeByPriority(Builder $query, string $priority): Builder
+    {
+        return $query->where('priority', $priority);
+    }
+
+    public function scopeByCategory(Builder $query, string $category): Builder
+    {
+        return $query->where('category', $category);
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeInvestigating(Builder $query): Builder
+    {
+        return $query->where('status', 'investigating');
+    }
+
+    public function scopeResolved(Builder $query): Builder
+    {
+        return $query->where('status', 'resolved');
+    }
+
+    public function scopeUrgent(Builder $query): Builder
+    {
+        return $query->where('priority', 'urgent');
+    }
+
+    public function scopeHighPriority(Builder $query): Builder
+    {
+        return $query->whereIn('priority', ['high', 'urgent']);
+    }
+
+    // Mutators
+    public function setStatusAttribute($value)
+    {
+        $this->attributes['status'] = $value;
+        
+        // Auto-set resolved_at when status becomes resolved or closed
+        if (in_array($value, ['resolved', 'closed']) && !$this->resolved_at) {
+            $this->attributes['resolved_at'] = now();
+        }
     }
 }

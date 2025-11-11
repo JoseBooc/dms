@@ -25,15 +25,27 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-500">Type</label>
-                        <p class="mt-1 text-sm text-gray-900">{{ $this->penaltySetting->type }}</p>
+                        <p class="mt-1 text-sm text-gray-900">
+                            @if($this->penaltySetting->penalty_type === 'daily_fixed')
+                                Daily Fixed
+                            @elseif($this->penaltySetting->penalty_type === 'percentage')
+                                Percentage
+                            @elseif($this->penaltySetting->penalty_type === 'flat_fee')
+                                Flat Fee
+                            @else
+                                {{ ucfirst(str_replace('_', ' ', $this->penaltySetting->penalty_type)) }}
+                            @endif
+                        </p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-500">Rate</label>
                         <p class="mt-1 text-sm text-gray-900">
-                            @if($this->penaltySetting->type === 'percentage')
-                                {{ ($this->penaltySetting->value * 100) }}%
+                            @if($this->penaltySetting->penalty_type === 'percentage')
+                                {{ number_format($this->penaltySetting->penalty_rate, 1) }}%
+                            @elseif($this->penaltySetting->penalty_type === 'daily_fixed')
+                                ₱{{ number_format($this->penaltySetting->penalty_rate, 2) }}/day
                             @else
-                                ₱{{ number_format($this->penaltySetting->value, 2) }}
+                                ₱{{ number_format($this->penaltySetting->penalty_rate, 2) }}
                             @endif
                         </p>
                     </div>
@@ -43,7 +55,13 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-500">Max Penalty</label>
-                        <p class="mt-1 text-sm text-gray-900">₱{{ number_format($this->penaltySetting->max_penalty_amount, 2) }}</p>
+                        <p class="mt-1 text-sm text-gray-900">
+                            @if($this->penaltySetting->max_penalty)
+                                ₱{{ number_format($this->penaltySetting->max_penalty, 2) }}
+                            @else
+                                No Cap
+                            @endif
+                        </p>
                     </div>
                 </div>
             @else

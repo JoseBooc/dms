@@ -15,7 +15,28 @@ class EditMaintenanceRequest extends EditRecord
     protected function getActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\Action::make('resolve')
+                ->label('Mark as Completed')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('Mark Maintenance Request as Completed')
+                ->modalSubheading('This will mark the maintenance request as completed and set the completion date.')
+                ->visible(fn () => $this->record->status !== 'completed')
+                ->action(function () {
+                    $this->record->update([
+                        'status' => 'completed',
+                        'completed_at' => now(),
+                    ]);
+                    
+                    // Notify the tenant who made the request
+                    $tenant = User::find($this->record->tenant_id);
+                    if ($tenant) {
+                        $tenant->notify(new MaintenanceRequestNotification($this->record, 'completed'));
+                    }
+                    
+                    $this->notify('success', 'Maintenance request marked as completed.');
+                }),
         ];
     }
 

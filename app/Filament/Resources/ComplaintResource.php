@@ -39,7 +39,7 @@ class ComplaintResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $query = Complaint::query();
+        $query = Complaint::query()->with(['tenant', 'room', 'assignedTo']);
         \Log::info('Admin Complaint query count: ' . $query->count());
         return $query;
     }
@@ -55,22 +55,30 @@ class ComplaintResource extends Resource
                             ->options(User::where('role', 'tenant')->pluck('name', 'id'))
                             ->required()
                             ->searchable()
-                            ->preload(),
-                            
-                        Forms\Components\Select::make('room_id')
-                            ->label('Room')
-                            ->options(Room::all()->pluck('room_number', 'id'))
-                            ->searchable()
-                            ->preload(),
-                            
-                        Forms\Components\TextInput::make('title')
-                            ->required()
-                            ->maxLength(255),
-                            
-                        Forms\Components\Textarea::make('description')
-                            ->required()
-                            ->rows(4),
-                            
+                            ->preload()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                if (!$state) {
+                                    $set('room_id', null);
+                                    return;
+                                }
+                                
+                                // Get the tenant's active room assignment
+                                $user = User::with('tenant.assignments')->find($state);
+                                if ($user && $user->tenant) {
+                                    $activeAssignment = $user->tenant->assignments()
+                                        ->where('status', 'active')
+                                        ->with('room')
+                                        ->first();
+                                    
+                                    if ($activeAssignment && $activeAssignment->room) {
+                                        $set('room_id', $activeAssignment->room->id);
+                                    } else {
+                                        $set('room_id', null);
+                                    }
+                                }
+                            }),
+                        
                         Forms\Components\Select::make('category')
                             ->options([
                                 'noise' => 'Noise',
@@ -82,7 +90,61 @@ class ComplaintResource extends Resource
                                 'other' => 'Other'
                             ])
                             ->required()
-                            ->default('other'),
+                            ->default('other')
+                            ->reactive(),
+                            
+                        Forms\Components\Select::make('room_id')
+                            ->label('Room / Area')
+                            ->options(function (callable $get) {
+                                $category = $get('category');
+                                $editableCategories = ['facilities', 'cleanliness', 'security', 'other'];
+                                
+                                // If category allows common areas, include them
+                                if (in_array($category, $editableCategories)) {
+                                    return array_merge(
+                                        Room::pluck('room_number', 'id')->toArray(),
+                                        [
+                                            'common_bathroom' => 'Common Bathroom',
+                                            'common_kitchen' => 'Common Kitchen',
+                                            'hallway' => 'Hallway',
+                                            'lobby' => 'Lobby',
+                                            'study_area' => 'Study Area',
+                                            'laundry_area' => 'Laundry Area',
+                                            'outdoor_area' => 'Outdoor Area',
+                                        ]
+                                    );
+                                }
+                                
+                                return Room::pluck('room_number', 'id');
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->disabled(function (callable $get) {
+                                $category = $get('category');
+                                $editableCategories = ['facilities', 'cleanliness', 'security', 'other'];
+                                return !in_array($category, $editableCategories);
+                            })
+                            ->dehydrated()
+                            ->helperText(function (callable $get) {
+                                $category = $get('category');
+                                $editableCategories = ['facilities', 'cleanliness', 'security', 'other'];
+                                
+                                if (in_array($category, $editableCategories)) {
+                                    return 'Room is editable for this category. Select tenant\'s room or a common area.';
+                                }
+                                return 'Room auto-populated from tenant assignment (locked for this category).';
+                            })
+                            ->placeholder('Select tenant first'),
+                            
+                        Forms\Components\TextInput::make('title')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Brief summary of the complaint'),
+                            
+                        Forms\Components\Textarea::make('description')
+                            ->required()
+                            ->rows(4)
+                            ->placeholder('Detailed description of the issue'),
                             
                         Forms\Components\Select::make('priority')
                             ->options([
@@ -107,26 +169,44 @@ class ComplaintResource extends Resource
                             ])
                             ->required()
                             ->default('pending')
-                            ->disabled(false)
-                            ->reactive(),
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                // Auto-set resolved_at when status becomes resolved or closed
+                                if (in_array($state, ['resolved', 'closed'])) {
+                                    $set('resolved_at', now());
+                                }
+                            }),
                             
                         Forms\Components\Select::make('assigned_to')
                             ->label('Assigned To')
                             ->options(User::whereIn('role', ['admin', 'staff'])->pluck('name', 'id'))
                             ->searchable()
                             ->preload()
-                            ->disabled(false)
-                            ->placeholder('Select staff member'),
+                            ->required(fn (callable $get) => $get('status') === 'investigating')
+                            ->placeholder('Select staff member')
+                            ->helperText(fn (callable $get) => 
+                                $get('status') === 'investigating' 
+                                    ? 'Required when status is "Investigating"' 
+                                    : 'Optional for other statuses'
+                            ),
                             
                         Forms\Components\Textarea::make('resolution')
                             ->rows(3)
                             ->columnSpanFull()
-                            ->disabled(false)
-                            ->placeholder('Enter resolution details...'),
+                            ->required(fn (callable $get) => in_array($get('status'), ['resolved', 'closed']))
+                            ->placeholder('Enter resolution details...')
+                            ->helperText(fn (callable $get) => 
+                                in_array($get('status'), ['resolved', 'closed'])
+                                    ? 'Required when status is "Resolved" or "Closed"' 
+                                    : 'Optional for other statuses'
+                            ),
                             
                         Forms\Components\DateTimePicker::make('resolved_at')
                             ->label('Resolved At')
-                            ->disabled(false),
+                            ->disabled()
+                            ->dehydrated()
+                            ->visible(fn (callable $get) => in_array($get('status'), ['resolved', 'closed']))
+                            ->helperText('Auto-set when status changes to Resolved or Closed'),
                     ])
                     ->columns(2),
             ]);
@@ -140,40 +220,72 @@ class ComplaintResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('tenant.first_name')
+                    ->sortable()
+                    ->searchable(),
+                    
+                Tables\Columns\TextColumn::make('tenant.name')
                     ->label('Tenant')
-                    ->formatStateUsing(fn ($record) => $record->tenant ? 
-                        $record->tenant->first_name . ' ' . $record->tenant->last_name : 'Unknown'),
+                    ->searchable()
+                    ->sortable(),
+                    
                 Tables\Columns\TextColumn::make('room.room_number')
                     ->label('Room')
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
+                    
                 Tables\Columns\TextColumn::make('title')
                     ->label('Title')
-                    ->limit(40),
-                Tables\Columns\TextColumn::make('category')
+                    ->limit(40)
+                    ->searchable()
+                    ->sortable(),
+                    
+                Tables\Columns\BadgeColumn::make('category')
                     ->label('Category')
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'noise' => 'Noise',
-                        'cleanliness' => 'Cleanliness',
-                        'behavior' => 'Behavior',
-                        'facilities' => 'Facilities',
-                        'safety' => 'Safety',
-                        'billing' => 'Billing',
-                        'other' => 'Other',
-                        default => ucfirst($state),
-                    }),
-                Tables\Columns\TextColumn::make('priority')
+                    ->colors([
+                        'danger' => 'noise',
+                        'warning' => 'maintenance',
+                        'primary' => 'facilities',
+                        'secondary' => 'staff',
+                        'success' => 'security',
+                        'info' => 'cleanliness',
+                        'secondary' => 'other',
+                    ])
+                    ->formatStateUsing(fn ($state) => ucfirst($state))
+                    ->sortable(),
+                    
+                Tables\Columns\BadgeColumn::make('priority')
                     ->label('Priority')
-                    ->formatStateUsing(fn ($state) => ucfirst($state)),
-                Tables\Columns\TextColumn::make('status')
+                    ->colors([
+                        'secondary' => 'low',
+                        'primary' => 'medium',
+                        'warning' => 'high',
+                        'danger' => 'urgent',
+                    ])
+                    ->formatStateUsing(fn ($state) => ucfirst($state))
+                    ->sortable(),
+                    
+                Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->formatStateUsing(fn ($state) => ucwords(str_replace('_', ' ', $state))),
+                    ->colors([
+                        'warning' => 'pending',
+                        'primary' => 'investigating',
+                        'success' => 'resolved',
+                        'secondary' => 'closed',
+                    ])
+                    ->formatStateUsing(fn ($state) => ucfirst($state))
+                    ->sortable(),
+                    
+                Tables\Columns\TextColumn::make('assignedTo.name')
+                    ->label('Assigned To')
+                    ->default('Unassigned')
+                    ->sortable(),
+                    
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->label('Submitted')
                     ->sortable(),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([

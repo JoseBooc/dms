@@ -15,6 +15,25 @@ class ViewComplaint extends ViewRecord
     protected function getActions(): array
     {
         return [
+            Actions\Action::make('mark_resolved')
+                ->label('Mark as Resolved')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('Mark Complaint as Resolved')
+                ->modalSubheading('This will mark the complaint as resolved and set the resolution date.')
+                ->visible(fn () => !in_array($this->record->status, ['resolved', 'closed']))
+                ->action(function () {
+                    $this->record->update([
+                        'status' => 'resolved',
+                        'resolved_at' => now(),
+                    ]);
+                    
+                    $this->notify('success', 'Complaint marked as resolved.');
+                    
+                    // Refresh the page to show updated status
+                    redirect()->to(ComplaintResource::getUrl('view', ['record' => $this->record]));
+                }),
             Actions\EditAction::make(),
         ];
     }

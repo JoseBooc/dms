@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DepositDeduction extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'deposit_id',
@@ -47,10 +48,10 @@ class DepositDeduction extends Model
     {
         return match($this->deduction_type) {
             'unpaid_rent' => 'Unpaid Rent',
-            'damage_charge' => 'Damage Charge',
-            'cleaning_fee' => 'Cleaning Fee',
-            'utility_arrears' => 'Utility Arrears',
-            'other' => 'Other',
+            'unpaid_electricity' => 'Unpaid Electricity',
+            'unpaid_water' => 'Unpaid Water',
+            'penalty' => 'Penalty',
+            'damage' => 'Damage',
             default => ucfirst(str_replace('_', ' ', $this->deduction_type)),
         };
     }

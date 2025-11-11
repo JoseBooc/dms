@@ -74,9 +74,10 @@ class StaffDashboard extends Page implements HasForms
     {
         return [
             'total_rooms' => Room::count(),
-            'occupied_rooms' => Room::whereHas('currentAssignments')->count(),
-            'available_rooms' => Room::where('status', 'available')
-                ->whereDoesntHave('currentAssignments')->count(),
+            // Count rooms that have any occupants (current_occupants > 0)
+            'occupied_rooms' => Room::where('current_occupants', '>', 0)->count(),
+            // Count rooms with available space (current occupancy less than capacity)
+            'available_rooms' => Room::whereColumn('current_occupants', '<', 'capacity')->count(),
             'total_tenants' => RoomAssignment::where('status', 'active')->count(),
         ];
     }

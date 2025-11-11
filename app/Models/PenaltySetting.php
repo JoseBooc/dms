@@ -12,20 +12,18 @@ class PenaltySetting extends Model
     protected $fillable = [
         'name',
         'description',
-        'type',
-        'value',
+        'penalty_type',
+        'penalty_rate',
         'grace_period_days',
-        'max_penalty_days',
-        'max_penalty_amount',
-        'is_active',
+        'max_penalty',
+        'active',
     ];
 
     protected $casts = [
-        'value' => 'decimal:2',
-        'max_penalty_amount' => 'decimal:2',
-        'is_active' => 'boolean',
+        'penalty_rate' => 'decimal:2',
+        'max_penalty' => 'decimal:2',
+        'active' => 'boolean',
         'grace_period_days' => 'integer',
-        'max_penalty_days' => 'integer',
     ];
 
     /**
@@ -34,39 +32,50 @@ class PenaltySetting extends Model
     public static function getActiveSetting(string $name): ?self
     {
         return self::where('name', $name)
-            ->where('is_active', true)
+            ->where('active', true)
             ->first();
     }
 
     /**
      * Calculate penalty amount based on the setting
+     * Following realistic Philippine dormitory rules
      */
     public function calculatePenalty(float $billAmount, int $overdueDays): float
     {
+        // No penalty if within grace period
         if ($overdueDays <= $this->grace_period_days) {
             return 0;
         }
 
+        // Calculate days after grace period
         $applicableDays = $overdueDays - $this->grace_period_days;
         
-        // Limit to max penalty days if set
-        if ($this->max_penalty_days) {
-            $applicableDays = min($applicableDays, $this->max_penalty_days);
-        }
-
         $penaltyAmount = 0;
 
-        if ($this->type === 'fixed') {
-            // Fixed amount per day
-            $penaltyAmount = $this->value * $applicableDays;
-        } else {
-            // Percentage of bill amount
-            $penaltyAmount = ($billAmount * $this->value / 100) * $applicableDays;
+        switch ($this->penalty_type) {
+            case 'daily_fixed':
+                // Fixed peso amount per day late (e.g., ₱50/day)
+                $penaltyAmount = $this->penalty_rate * $applicableDays;
+                break;
+                
+            case 'percentage':
+                // Percentage of bill total (one-time, not per day)
+                // e.g., 3% of total bill
+                $penaltyAmount = $billAmount * ($this->penalty_rate / 100);
+                break;
+                
+            case 'flat_fee':
+                // One-time flat fee
+                $penaltyAmount = $this->penalty_rate;
+                break;
+                
+            default:
+                $penaltyAmount = 0;
         }
 
-        // Apply maximum penalty limit if set
-        if ($this->max_penalty_amount) {
-            $penaltyAmount = min($penaltyAmount, $this->max_penalty_amount);
+        // Apply maximum penalty limit
+        if ($this->max_penalty && $penaltyAmount > $this->max_penalty) {
+            $penaltyAmount = $this->max_penalty;
         }
 
         return round($penaltyAmount, 2);

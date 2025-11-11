@@ -20,12 +20,11 @@ class ListUtilityReadings extends ListRecords
 
     protected function getTableQuery(): Builder
     {
-        // Show only one record per tenant per date (water records preferred)
-        // This avoids showing duplicate rows since we display both utilities in columns
+        // Show all utility readings, ordered by most recent first
+        // New unified readings have NULL utility_type_id and contain both water & electric data
+        // Old readings may still have utility_type_id set (legacy data)
         return parent::getTableQuery()
-            ->whereHas('utilityType', function ($query) {
-                $query->where('name', 'Water');
-            })
-            ->orderBy('reading_date', 'desc');
+            ->orderBy('reading_date', 'desc')
+            ->orderBy('id', 'desc');
     }
 }

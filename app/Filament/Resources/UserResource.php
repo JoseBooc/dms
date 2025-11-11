@@ -105,12 +105,14 @@ class UserResource extends Resource
                         Forms\Components\Select::make('status')
                             ->options([
                                 'active' => 'Active',
+                                'blocked' => 'Blocked',
                                 'inactive' => 'Inactive',
                                 'suspended' => 'Suspended',
                             ])
                             ->required()
                             ->default('active')
-                            ->hidden(fn (string $context): bool => $context === 'create'),
+                            ->hidden(fn (string $context): bool => $context === 'create')
+                            ->helperText('Set to "Blocked" to prevent user login'),
                         
                         Forms\Components\Select::make('gender')
                             ->options(function (callable $get, string $context, $record = null) {
@@ -173,11 +175,20 @@ class UserResource extends Resource
                     ]),
                 
                 Tables\Columns\BadgeColumn::make('status')
+                    ->label('Status')
                     ->colors([
                         'success' => 'active',
+                        'danger' => 'blocked',
                         'warning' => 'inactive',
-                        'danger' => 'suspended',
-                    ]),
+                        'secondary' => 'suspended',
+                    ])
+                    ->formatStateUsing(fn (string $state): string => match($state) {
+                        'active' => 'Active',
+                        'blocked' => 'Blocked',
+                        'inactive' => 'Inactive',
+                        'suspended' => 'Suspended',
+                        default => ucfirst($state),
+                    }),
                 
                 Tables\Columns\TextColumn::make('gender'),
                 
@@ -202,15 +213,95 @@ class UserResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'active' => 'Active',
+                        'blocked' => 'Blocked',
                         'inactive' => 'Inactive',
                         'suspended' => 'Suspended',
                     ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                
+                Tables\Actions\Action::make('toggleBlock')
+                    ->label(fn (User $record): string => $record->status === 'blocked' ? 'Unblock' : 'Block')
+                    ->icon(fn (User $record): string => $record->status === 'blocked' ? 'heroicon-o-lock-open' : 'heroicon-o-lock-closed')
+                    ->color(fn (User $record): string => $record->status === 'blocked' ? 'success' : 'danger')
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (User $record): string => $record->status === 'blocked' ? 'Unblock User' : 'Block User')
+                    ->modalSubheading(fn (User $record): string => 
+                        $record->status === 'blocked' 
+                            ? 'Are you sure you want to unblock this user? They will be able to log in again.'
+                            : 'Are you sure you want to block this user? They will not be able to log in.'
+                    )
+                    ->action(function (User $record) {
+                        if ($record->status === 'blocked') {
+                            $record->update(['status' => 'active']);
+                            \Filament\Notifications\Notification::make()
+                                ->title('User Unblocked')
+                                ->success()
+                                ->body("User {$record->name} has been unblocked successfully.")
+                                ->send();
+                        } else {
+                            $record->update(['status' => 'blocked']);
+                            \Filament\Notifications\Notification::make()
+                                ->title('User Blocked')
+                                ->warning()
+                                ->body("User {$record->name} has been blocked successfully.")
+                                ->send();
+                        }
+                    })
+                    ->visible(fn (User $record): bool => 
+                        auth()->user()->isAdmin() && 
+                        auth()->id() !== $record->id && // Can't block yourself
+                        $record->role !== 'admin' // Can't block other admins
+                    ),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\BulkAction::make('blockSelected')
+                    ->label('Block Selected')
+                    ->icon('heroicon-o-lock-closed')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Block Selected Users')
+                    ->modalSubheading('Are you sure you want to block the selected users? They will not be able to log in.')
+                    ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        $blocked = 0;
+                        foreach ($records as $record) {
+                            // Don't block yourself or other admins
+                            if (auth()->id() !== $record->id && $record->role !== 'admin') {
+                                $record->update(['status' => 'blocked']);
+                                $blocked++;
+                            }
+                        }
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Users Blocked')
+                            ->success()
+                            ->body("{$blocked} user(s) have been blocked successfully.")
+                            ->send();
+                    }),
+                
+                Tables\Actions\BulkAction::make('unblockSelected')
+                    ->label('Unblock Selected')
+                    ->icon('heroicon-o-lock-open')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Unblock Selected Users')
+                    ->modalSubheading('Are you sure you want to unblock the selected users? They will be able to log in again.')
+                    ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        $unblocked = 0;
+                        foreach ($records as $record) {
+                            if ($record->status === 'blocked') {
+                                $record->update(['status' => 'active']);
+                                $unblocked++;
+                            }
+                        }
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Users Unblocked')
+                            ->success()
+                            ->body("{$unblocked} user(s) have been unblocked successfully.")
+                            ->send();
+                    }),
             ]);
     }
     

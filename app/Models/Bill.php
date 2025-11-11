@@ -12,6 +12,7 @@ class Bill extends Model
     protected $fillable = [
         'tenant_id',
         'room_id',
+        'penalty_bill_for_id',
         'bill_type',
         'description',
         'details',
@@ -22,6 +23,7 @@ class Bill extends Model
         'water',
         'other_charges',
         'other_charges_description',
+        'penalty_charge',
         'total_amount',
         'status',
         'amount_paid',
@@ -44,6 +46,7 @@ class Bill extends Model
         'electricity' => 'decimal:2',
         'water' => 'decimal:2',
         'other_charges' => 'decimal:2',
+        'penalty_charge' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'penalty_amount' => 'decimal:2',
@@ -74,6 +77,22 @@ class Bill extends Model
     public function penaltyWaivedBy()
     {
         return $this->belongsTo(User::class, 'penalty_waived_by');
+    }
+
+    /**
+     * The original bill that this penalty bill is for
+     */
+    public function originalPenaltySource()
+    {
+        return $this->belongsTo(Bill::class, 'penalty_bill_for_id');
+    }
+
+    /**
+     * Penalty bills generated from this bill
+     */
+    public function penaltyBills()
+    {
+        return $this->hasMany(Bill::class, 'penalty_bill_for_id');
     }
 
     // Penalty-related methods
@@ -119,9 +138,16 @@ class Bill extends Model
 
     /**
      * Calculate and apply penalty if applicable
+     * WITH IDEMPOTENCY CHECK - prevents double application
      */
     public function calculatePenalty(): void
     {
+        // Return early if already calculated recently (within last hour)
+        if ($this->penalty_applied_date && 
+            now()->diffInHours($this->penalty_applied_date) < 1) {
+            return;
+        }
+        
         if (!$this->isOverdue() || $this->penalty_waived) {
             return;
         }
@@ -173,5 +199,13 @@ class Bill extends Model
     public function depositDeductions()
     {
         return $this->hasMany(DepositDeduction::class);
+    }
+
+    /**
+     * Get utility readings associated with this bill
+     */
+    public function utilityReadings()
+    {
+        return $this->hasMany(UtilityReading::class);
     }
 }

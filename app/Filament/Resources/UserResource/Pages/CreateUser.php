@@ -13,6 +13,13 @@ class CreateUser extends CreateRecord
 {
     protected static string $resource = UserResource::class;
 
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+        ];
+    }
+
     protected function getCancelledRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');

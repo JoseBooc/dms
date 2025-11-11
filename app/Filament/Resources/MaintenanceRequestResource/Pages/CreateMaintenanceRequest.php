@@ -12,6 +12,13 @@ class CreateMaintenanceRequest extends CreateRecord
 {
     protected static string $resource = MaintenanceRequestResource::class;
 
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+        ];
+    }
+
     protected function afterCreate(): void
     {
         $maintenanceRequest = $this->record;

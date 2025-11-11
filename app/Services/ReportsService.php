@@ -22,7 +22,7 @@ class ReportsService
         $endDate = $endDate ?? Carbon::now();
 
         $totalRooms = Room::count();
-        $currentOccupancy = Room::where('status', 'occupied')->count();
+        $currentOccupancy = Room::where('current_occupants', '>', 0)->count();
         $occupancyRate = $totalRooms > 0 ? round(($currentOccupancy / $totalRooms) * 100, 2) : 0;
 
         // Historical occupancy data
@@ -31,7 +31,7 @@ class ReportsService
         // Room type breakdown
         $roomTypeBreakdown = Room::select('type')
             ->selectRaw('COUNT(*) as total')
-            ->selectRaw('SUM(CASE WHEN status = "occupied" THEN 1 ELSE 0 END) as occupied')
+            ->selectRaw('SUM(CASE WHEN current_occupants > 0 THEN 1 ELSE 0 END) as occupied')
             ->groupBy('type')
             ->get()
             ->map(function ($item) {

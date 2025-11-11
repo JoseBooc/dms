@@ -9,4 +9,11 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateTenantBill extends CreateRecord
 {
     protected static string $resource = TenantBillResource::class;
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+        ];
+    }
 }
