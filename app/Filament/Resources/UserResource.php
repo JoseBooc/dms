@@ -114,28 +114,7 @@ class UserResource extends Resource
                             ->hidden(fn (string $context): bool => $context === 'create')
                             ->helperText('Set to "Blocked" to prevent user login'),
                         
-                        Forms\Components\Select::make('gender')
-                            ->options(function (callable $get, string $context, $record = null) {
-                                $role = $get('role') ?? ($record->role ?? null);
-                                
-                                if ($role === 'tenant') {
-                                    return [
-                                        'female' => 'Female',
-                                    ];
-                                }
-                                
-                                return [
-                                    'male' => 'Male',
-                                    'female' => 'Female',
-                                    'other' => 'Other',
-                                ];
-                            })
-                            ->required()
-                            ->default(function (callable $get, string $context, $record = null) {
-                                $role = $get('role') ?? ($record->role ?? null);
-                                return $role === 'tenant' ? 'female' : null;
-                            })
-                            ->reactive(),
+                        // Gender field removed from form
                         
                         Forms\Components\Placeholder::make('tenant_creation_note')
                             ->label('')
@@ -190,7 +169,7 @@ class UserResource extends Resource
                         default => ucfirst($state),
                     }),
                 
-                Tables\Columns\TextColumn::make('gender'),
+                // Gender column and field removed from user management
                 
                 Tables\Columns\TextColumn::make('email_verified_at')
                     ->dateTime()

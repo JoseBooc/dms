@@ -109,12 +109,14 @@ class MaintenanceRequestController extends Controller
             ->with('success', 'Maintenance request updated.');
     }
 
+    /**
+     * Delete method disabled - data preservation policy
+     * Maintenance requests should be cancelled or marked as completed instead
+     */
     public function destroy(MaintenanceRequest $maintenance_request)
     {
-        $this->authorizeOwner($maintenance_request);
-        $maintenance_request->delete();
         return redirect()->route('maintenance-requests.index')
-            ->with('success', 'Maintenance request deleted.');
+            ->with('error', 'Deleting maintenance requests is not allowed. Please cancel or mark as completed instead.');
     }
 
     public function updateStatus(Request $request, MaintenanceRequest $task)

@@ -214,39 +214,15 @@ class RoomAssignmentController extends Controller
         }
     }
 
+    /**
+     * Delete method disabled - data preservation policy
+     * Room assignments should be ended using the 'end' method instead
+     */
     public function destroy(RoomAssignment $roomAssignment)
     {
-        try {
-            DB::beginTransaction();
-
-            // Only update room status if the assignment was active
-            if ($roomAssignment->status === 'active') {
-                $room = Room::find($roomAssignment->room_id);
-                $remainingAssignments = $room->assignments()->where('status', 'active')->where('id', '!=', $roomAssignment->id)->count();
-                
-                // Update room status and occupancy
-                if ($remainingAssignments === 0) {
-                    $room->update([
-                        'status' => 'available',
-                        'current_occupants' => 0
-                    ]);
-                } else {
-                    $room->update([
-                        'current_occupants' => $remainingAssignments
-                    ]);
-                }
-            }
-            
-            $roomAssignment->delete();
-
-            DB::commit();
-            return redirect()
-                ->route('room-assignments.index')
-                ->with('success', 'Room assignment deleted successfully.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to delete room assignment.']);
-        }
+        return redirect()
+            ->route('room-assignments.index')
+            ->with('error', 'Deleting room assignments is not allowed. Please use the "End Assignment" feature instead.');
     }
 
     public function end(RoomAssignment $roomAssignment)

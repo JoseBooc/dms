@@ -14,8 +14,7 @@ class EditTenantComplaint extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\DeleteAction::make()
-                ->visible(fn ($record) => $record->status === 'open'),
+            // No delete action - data preservation policy
         ];
     }
     

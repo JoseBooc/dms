@@ -119,16 +119,12 @@ class UtilityTypeController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
-     *
-     * @param  UtilityType  $utilityType
-     * @return \Illuminate\Http\Response
+     * Delete method disabled - data preservation policy
+     * Utility types should be marked as inactive instead of deleted
      */
     public function destroy(UtilityType $utilityType)
     {
-        $utilityType->delete();
-        
         return redirect()->route('admin.utility-types.index')
-                         ->with('success', 'Utility type deleted successfully.');
+                         ->with('error', 'Deleting utility types is not allowed. Please mark as inactive instead.');
     }
 }

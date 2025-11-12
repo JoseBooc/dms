@@ -4,11 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UtilityReading extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'room_id',
@@ -375,7 +374,7 @@ class UtilityReading extends Model
     public static function generateReadingNumber(): string
     {
         // Get the latest reading number
-        $latestReading = static::withTrashed()
+        $latestReading = static::query()
             ->whereNotNull('reading_number')
             ->orderBy('id', 'desc')
             ->first();

@@ -130,12 +130,13 @@ try {
 echo "\n=== STATISTICS ===\n\n";
 
 $totalReadings = UtilityReading::count();
-$archivedReadings = UtilityReading::onlyTrashed()->count();
+// Archived readings no longer supported - UtilityReading doesn't use soft deletes
+$archivedReadings = 0;
 $billedReadings = UtilityReading::whereNotNull('bill_id')->count();
 $unbilledReadings = UtilityReading::whereNull('bill_id')->count();
 
 echo "Total Active Readings: {$totalReadings}\n";
-echo "Archived Readings: {$archivedReadings}\n";
+echo "Archived Readings: {$archivedReadings} (soft deletes removed)\n";
 echo "Billed Readings: {$billedReadings}\n";
 echo "Unbilled Readings: {$unbilledReadings}\n";
 

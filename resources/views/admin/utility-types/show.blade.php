@@ -112,12 +112,7 @@
                                             <div class="flex items-center space-x-2">
                                                 <a href="{{ route('admin.utility-rates.edit', $rate) }}" 
                                                    class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                                                <form action="{{ route('admin.utility-rates.destroy', $rate) }}" method="POST" class="inline" 
-                                                      onsubmit="return confirm('Are you sure you want to delete this rate?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
-                                                </form>
+                                                {{-- Delete button disabled - data preservation policy --}}
                                             </div>
                                         </td>
                                     </tr>

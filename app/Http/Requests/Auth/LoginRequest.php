@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Services\AuthenticationService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -49,12 +50,22 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        // Check if user is blocked
-        if (Auth::user()->status === 'blocked') {
+        // Check if user is blocked or inactive using AuthenticationService
+        $user = Auth::user();
+        
+        if (!AuthenticationService::checkUserStatusBeforeLogin($user)) {
+            // Log the blocked attempt
+            AuthenticationService::logBlockedLoginAttempt(
+                $user,
+                $this->ip(),
+                $this->userAgent()
+            );
+
+            // Logout the user immediately
             Auth::logout();
             
             throw ValidationException::withMessages([
-                'email' => 'Your account has been blocked. Please contact the administrator.',
+                'email' => AuthenticationService::getBlockedLoginMessage($user),
             ]);
         }
 

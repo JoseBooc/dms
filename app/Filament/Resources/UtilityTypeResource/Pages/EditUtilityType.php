@@ -13,7 +13,7 @@ class EditUtilityType extends EditRecord
     protected function getActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            // No delete action - data preservation policy
         ];
     }
 }

@@ -40,10 +40,9 @@ class AssignmentsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                // No bulk actions - data preservation policy
             ]);
     }    
 }

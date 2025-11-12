@@ -99,6 +99,17 @@ class MaintenanceRequest extends Model
         return $query->where('is_common_area', false);
     }
 
+    // Helper method to check for duplicate requests
+    public static function hasDuplicateRequest(int $tenantId, int $roomId, string $area, int $hoursWindow = 24): bool
+    {
+        return self::where('tenant_id', $tenantId)
+            ->where('room_id', $roomId)
+            ->where('area', $area)
+            ->where('created_at', '>=', now()->subHours($hoursWindow))
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->exists();
+    }
+
     // Mutators
     public function setStatusAttribute($value)
     {

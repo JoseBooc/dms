@@ -130,7 +130,7 @@ class MaintenanceRequestResource extends Resource
                                 }
                                 return \App\Models\Room::pluck('room_number', 'id');
                             })
-                            ->required()
+                            ->required(fn (callable $get) => $get('is_common_area') === true)
                             ->searchable()
                             ->disabled(fn (callable $get) => !$get('is_common_area'))
                             ->dehydrated()

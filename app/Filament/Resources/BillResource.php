@@ -390,18 +390,7 @@ class BillResource extends Resource
                     ->label('Room')
                     ->sortable()
                     ->toggleable(),
-                Tables\Columns\BadgeColumn::make('bill_type')
-                    ->label('Type')
-                    ->formatStateUsing(fn ($state) => ucfirst(str_replace('_', ' ', $state)))
-                    ->colors([
-                        'primary' => 'room',
-                        'success' => 'utility',
-                        'warning' => 'maintenance',
-                        'danger' => 'penalty',
-                        'secondary' => 'other',
-                    ])
-                    ->sortable()
-                    ->toggleable(),
+                // Type column removed - bill_type field still exists in database
                 Tables\Columns\TextColumn::make('originalPenaltySource.id')
                     ->label('Linked Bill')
                     ->formatStateUsing(fn ($state) => $state ? "Bill #{$state}" : '-')

@@ -38,23 +38,12 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's account.
+     * Delete method disabled - data preservation policy
+     * User accounts should be deactivated instead of deleted
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current-password'],
-        ]);
-
-        $user = $request->user();
-
-        Auth::logout();
-
-        $user->delete();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return Redirect::to('/');
+        return Redirect::route('profile.edit')
+            ->with('error', 'Account deletion is not allowed. Please contact an administrator to deactivate your account.');
     }
 }

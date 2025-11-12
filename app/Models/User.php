@@ -203,4 +203,24 @@ class User extends Authenticatable
     {
         return $this->deposits()->where('status', 'active')->latest()->first();
     }
+
+    /**
+     * Check if user is inactive
+     * 
+     * @return bool
+     */
+    public function isInactive(): bool
+    {
+        return $this->status === 'inactive';
+    }
+
+    /**
+     * Check if user can login (not blocked or inactive)
+     * 
+     * @return bool
+     */
+    public function canLogin(): bool
+    {
+        return $this->status === 'active';
+    }
 }

@@ -556,16 +556,7 @@ class UtilityReadingResource extends Resource
                     ->label('Readings without Bills')
                     ->query(fn (Builder $query) => $query->whereNull('bill_id')),
                 
-                Tables\Filters\TrashedFilter::make()
-                    ->label('Archived')
-                    ->placeholder('Without archived')
-                    ->trueLabel('With archived')
-                    ->falseLabel('Only archived')
-                    ->queries(
-                        true: fn (Builder $query) => $query->withTrashed(),
-                        false: fn (Builder $query) => $query->onlyTrashed(),
-                        blank: fn (Builder $query) => $query->withoutTrashed(),
-                    ),
+                // Archived filter removed - UtilityReading no longer uses soft deletes
             ])
             ->defaultSort('reading_date', 'desc')
             ->actions([
@@ -620,7 +611,7 @@ class UtilityReadingResource extends Resource
                             $bill = \App\Models\Bill::create([
                                 'tenant_id' => $userId, // Use user_id, not tenant->id
                                 'room_id' => $room->id,
-                                'bill_type' => 'room', // Monthly bill including room + utilities
+                                'bill_type' => 'utility', // Utility bill (water + electricity + room)
                                 'room_rate' => $roomRate,
                                 'electricity' => round($electricCharge, 2),
                                 'water' => round($waterCharge, 2),
@@ -661,36 +652,9 @@ class UtilityReadingResource extends Resource
                     ->modalButton('Generate Bill'),
                 
                 Tables\Actions\EditAction::make(),
-                
-                Tables\Actions\DeleteAction::make()
-                    ->label('Archive')
-                    ->modalHeading('Archive Utility Reading')
-                    ->modalSubheading('This will archive the reading. You can restore it later from the archived items view.')
-                    ->modalButton('Archive Reading')
-                    ->successNotificationTitle('Reading archived successfully'),
-                
-                Tables\Actions\RestoreAction::make()
-                    ->label('Restore')
-                    ->successNotificationTitle('Reading restored successfully'),
-                
-                Tables\Actions\ForceDeleteAction::make()
-                    ->label('Delete Permanently')
-                    ->hidden(), // Hide force delete to prevent permanent deletion
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make()
-                    ->label('Archive Selected')
-                    ->modalHeading('Archive Selected Utility Readings')
-                    ->modalSubheading('This will archive the selected readings. You can restore them later.')
-                    ->successNotificationTitle('Readings archived successfully'),
-                
-                Tables\Actions\RestoreBulkAction::make()
-                    ->label('Restore Selected')
-                    ->successNotificationTitle('Readings restored successfully'),
-                
-                Tables\Actions\ForceDeleteBulkAction::make()
-                    ->label('Delete Permanently')
-                    ->hidden(), // Hide force delete to prevent permanent deletion
+                // No bulk actions - data preservation policy
             ]);
     }
     

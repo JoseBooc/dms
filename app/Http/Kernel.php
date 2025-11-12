@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         'admin' => \App\Http\Middleware\AdminMiddleware::class,
         'tenant.redirect' => \App\Http\Middleware\TenantDashboardRedirect::class,
         'check.blocked' => \App\Http\Middleware\CheckUserBlocked::class,
+        'check.user.status' => \App\Http\Middleware\CheckUserStatus::class,
     ];
 }

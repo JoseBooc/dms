@@ -205,7 +205,7 @@ class TenantResource extends Resource
                     ->label('Personal email')
                     ->searchable(),
                 
-                Tables\Columns\TextColumn::make('gender'),
+                // Gender column removed from table view - field still available in forms
                 
                 Tables\Columns\TextColumn::make('birth_date')
                     ->date()
@@ -217,12 +217,7 @@ class TenantResource extends Resource
                     ->toggleable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('gender')
-                    ->options([
-                        'male' => 'Male',
-                        'female' => 'Female',
-                        'other' => 'Other',
-                    ]),
+                // Gender filter removed - gender field still available in forms
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

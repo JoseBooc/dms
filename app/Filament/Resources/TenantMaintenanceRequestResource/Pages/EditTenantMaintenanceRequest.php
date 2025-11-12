@@ -14,8 +14,7 @@ class EditTenantMaintenanceRequest extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\DeleteAction::make()
-                ->visible(fn () => $this->record->status === 'pending'),
+            // No delete action - data preservation policy
         ];
     }
 

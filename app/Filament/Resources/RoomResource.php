@@ -262,7 +262,7 @@ class RoomResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\AssignmentsRelationManager::class,
+            // AssignmentsRelationManager removed - use Room Assignments resource instead
         ];
     }
     

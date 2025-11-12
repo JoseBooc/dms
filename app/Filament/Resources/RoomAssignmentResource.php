@@ -40,9 +40,28 @@ class RoomAssignmentResource extends Resource
                 Forms\Components\Section::make('Assignment Details')
                     ->schema([
                         Forms\Components\Select::make('tenant_id')
-                            ->relationship('tenant', 'first_name')
-                            ->required()
+                            ->label('Tenant')
                             ->searchable()
+                            ->required()
+                            ->getSearchResultsUsing(function (string $search) {
+                                return \App\Models\Tenant::query()
+                                    ->where(function ($query) use ($search) {
+                                        $query->where('last_name', 'like', "%{$search}%")
+                                            ->orWhere('first_name', 'like', "%{$search}%")
+                                            ->orWhere('id', 'like', "%{$search}%");
+                                    })
+                                    ->limit(10)
+                                    ->get()
+                                    ->mapWithKeys(function ($tenant) {
+                                        return [$tenant->id => "{$tenant->last_name}, {$tenant->first_name} – TID{$tenant->id}"];
+                                    });
+                            })
+                            ->getOptionLabelUsing(function ($value) {
+                                $tenant = \App\Models\Tenant::find($value);
+                                return $tenant ? "{$tenant->last_name}, {$tenant->first_name} – TID{$tenant->id}" : '';
+                            })
+                            ->helperText('Start typing tenant\'s last name or first name to search')
+                            ->preload(false)
                             ->createOptionForm([
                                 Forms\Components\TextInput::make('first_name')
                                     ->required(),
@@ -54,16 +73,33 @@ class RoomAssignmentResource extends Resource
                             ]),
                         
                         Forms\Components\Select::make('room_id')
-                            ->relationship(
-                                'room', 
-                                'room_number',
-                                fn ($query) => $query->whereRaw('current_occupants < capacity')
-                                    ->where('status', '!=', 'unavailable')
-                            )
-                            ->required()
+                            ->label('Room')
                             ->searchable()
-                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->room_number . ' (' . $record->occupancy_display . ')')
-                            ->helperText('Only rooms with available space are shown'),
+                            ->required()
+                            ->getSearchResultsUsing(function (string $search) {
+                                return \App\Models\Room::query()
+                                    ->whereRaw('current_occupants < capacity')
+                                    ->where('status', '!=', 'unavailable')
+                                    ->where('is_hidden', false)
+                                    ->where('room_number', 'like', "%{$search}%")
+                                    ->select('id', 'room_number', 'capacity', 'current_occupants')
+                                    ->limit(10)
+                                    ->get()
+                                    ->mapWithKeys(function ($room) {
+                                        $available = $room->capacity - $room->current_occupants;
+                                        $slots = $available === 1 ? '1 Slot' : "{$available} Slots";
+                                        return [$room->id => "Room {$room->room_number} – {$slots} Available"];
+                                    });
+                            })
+                            ->getOptionLabelUsing(function ($value) {
+                                $room = \App\Models\Room::find($value);
+                                if (!$room) return '';
+                                $available = $room->capacity - $room->current_occupants;
+                                $slots = $available === 1 ? '1 Slot' : "{$available} Slots";
+                                return "Room {$room->room_number} – {$slots} Available";
+                            })
+                            ->helperText('Only rooms with available space are shown. Start typing room number to search.')
+                            ->preload(false),
                         
                         Forms\Components\DatePicker::make('start_date')
                             ->required()
