@@ -321,10 +321,10 @@ class ReportsService
     /**
      * Generate comprehensive dashboard summary
      */
-    public function getDashboardSummary(): array
+    public function getDashboardSummary(?Carbon $startDate = null, ?Carbon $endDate = null): array
     {
-        $startDate = Carbon::now()->startOfMonth();
-        $endDate = Carbon::now()->endOfMonth();
+        $startDate = $startDate ?? Carbon::now()->startOfMonth();
+        $endDate = $endDate ?? Carbon::now()->endOfMonth();
 
         $occupancy = $this->getOccupancyReport('monthly', $startDate, $endDate);
         $financial = $this->getFinancialReport('monthly', $startDate, $endDate);

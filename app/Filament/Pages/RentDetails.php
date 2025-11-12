@@ -23,12 +23,14 @@ class RentDetails extends Page
 
     public static function canAccess(): bool
     {
-        return Auth::user()?->role === 'tenant';
+        // Hidden - replaced by MyRentInformation page
+        return false;
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()?->role === 'tenant';
+        // Hidden - replaced by MyRentInformation page
+        return false;
     }
 
     public function getViewData(): array

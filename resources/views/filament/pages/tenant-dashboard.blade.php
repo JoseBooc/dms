@@ -1,9 +1,9 @@
 <x-filament::page>
     <div class="space-y-6">
         <!-- Welcome Section -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">Welcome, {{ auth()->user()->name }}!</h2>
-            <p class="text-gray-600">Here's an overview of your tenancy information.</p>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Welcome, {{ auth()->user()->name }}!</h2>
+            <p class="text-gray-600 dark:text-gray-400">Here's an overview of your tenancy information.</p>
         </div>
 
         <!-- Maintenance Overview -->
@@ -116,16 +116,30 @@
 
         <!-- Current Room Assignment -->
         @if($currentAssignment)
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Current Room Assignment</h3>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Current Room Assignment</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <p class="text-sm text-gray-600">Room Number</p>
-                        <p class="text-lg font-semibold">{{ $currentAssignment->room->room_number ?? 'N/A' }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Room Number</p>
+                        <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $currentAssignment->room->room_number ?? 'N/A' }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600">Monthly Rent</p>
-                        <p class="text-lg font-semibold">₱{{ number_format($currentAssignment->monthly_rent ?? 0, 2) }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Monthly Rent</p>
+                        <p class="text-lg font-semibold text-green-600 dark:text-green-400">₱{{ number_format($currentAssignment->monthly_rent ?? 0, 2) }}</p>
+                    </div>
+                </div>
+            </div>
+        @else
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">No Room Assignment</h3>
+                        <p class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">You don't have an active room assignment yet. Please contact the administrator for assistance.</p>
                     </div>
                 </div>
             </div>
@@ -134,84 +148,96 @@
         <!-- Quick Actions -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Recent Bills -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Recent Bills</h3>
-                    <a href="{{ url('/dashboard/tenant-bill-resources') }}" class="text-blue-600 hover:text-blue-500 text-sm font-medium">View All</a>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Bills</h3>
+                    <a href="{{ url('/dashboard/tenant-bill-resources') }}" class="text-blue-600 hover:text-blue-500 dark:text-blue-400 text-sm font-medium">View All</a>
                 </div>
                 @if($recentBills->count() > 0)
                     <div class="space-y-3">
                         @foreach($recentBills->take(3) as $bill)
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded">
                                 <div>
-                                    <p class="font-medium">₱{{ number_format($bill->total_amount, 2) }}</p>
-                                    <p class="text-sm text-gray-600">{{ $bill->bill_date ? $bill->bill_date->format('M j, Y') : 'N/A' }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-gray-100">₱{{ number_format($bill->total_amount, 2) }}</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ $bill->bill_date ? $bill->bill_date->format('M j, Y') : 'N/A' }}</p>
                                 </div>
                                 <span class="px-2 py-1 text-xs rounded-full 
-                                    @if($bill->status === 'paid') bg-green-100 text-green-800
-                                    @elseif($bill->status === 'partially_paid') bg-yellow-100 text-yellow-800
-                                    @else bg-red-100 text-red-800 @endif">
+                                    {{ $bill->status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 
+                                       ($bill->status === 'partially_paid' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' : 
+                                       'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300') }}">
                                     {{ ucfirst(str_replace('_', ' ', $bill->status)) }}
                                 </span>
                             </div>
                         @endforeach
                     </div>
                 @else
-                    <p class="text-gray-600">No bills found.</p>
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No Bills Yet</h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Your bills will appear here when they are generated.</p>
+                    </div>
                 @endif
             </div>
 
             <!-- Pending Maintenance -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Pending Maintenance</h3>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Pending Maintenance</h3>
                 @if($maintenanceRequests->count() > 0)
                     <div class="space-y-3">
                         @foreach($maintenanceRequests->take(3) as $request)
-                            <div class="p-3 bg-gray-50 rounded">
-                                <p class="font-medium">{{ $request->title ?? 'Maintenance Request' }}</p>
-                                <p class="text-sm text-gray-600">{{ $request->created_at->format('M j, Y') }}</p>
-                                <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                            <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded">
+                                <p class="font-medium text-gray-900 dark:text-gray-100">{{ $request->title ?? 'Maintenance Request' }}</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $request->created_at->format('M j, Y') }}</p>
+                                <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
                                     {{ ucfirst($request->status) }}
                                 </span>
                             </div>
                         @endforeach
                     </div>
                 @else
-                    <p class="text-gray-600">No pending maintenance requests.</p>
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 011-1h1a2 2 0 100-4H7a1 1 0 01-1-1V8a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No Maintenance Requests</h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">You haven't submitted any maintenance requests yet.</p>
+                    </div>
                 @endif
             </div>
         </div>
 
         <!-- Utilities Section -->
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">Utilities Billing</h3>
-                <a href="{{ url('/dashboard/utility-details') }}" class="text-blue-600 hover:text-blue-500 text-sm font-medium">View All</a>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Utilities Billing</h3>
+                <a href="{{ url('/dashboard/utility-details') }}" class="text-blue-600 hover:text-blue-500 dark:text-blue-400 text-sm font-medium">View All</a>
             </div>
             
             @if($currentAssignment && $utilityReadings->count() > 0)
-                <div class="mb-4 p-3 bg-blue-50 rounded-lg">
-                    <p class="text-sm text-blue-900">
+                <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <p class="text-sm text-blue-900 dark:text-blue-200">
                         <strong>Room:</strong> {{ $currentAssignment->room->room_number ?? 'N/A' }}
                     </p>
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Type</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Billing Period</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Reading</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Consumption</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bill Type</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Billing Period</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reading</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Consumption</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             @foreach($utilityReadings->take(5) as $date => $readings)
                                 @foreach($readings as $reading)
-                                    <tr class="hover:bg-gray-50">
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                         <td class="px-4 py-3 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 @if($reading->utilityType->name === 'Water')
@@ -224,36 +250,36 @@
                                                     </svg>
                                                 @endif
                                                 <div>
-                                                    <p class="text-sm font-medium text-gray-900">{{ $reading->utilityType->name }}</p>
-                                                    <p class="text-xs text-gray-500">{{ $reading->utilityType->unit }}</p>
+                                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $reading->utilityType->name }}</p>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $reading->utilityType->unit }}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap">
-                                            <p class="text-sm text-gray-900">{{ $reading->reading_date->format('M Y') }}</p>
-                                            <p class="text-xs text-gray-500">{{ $reading->reading_date->format('M j, Y') }}</p>
+                                            <p class="text-sm text-gray-900 dark:text-gray-100">{{ $reading->reading_date->format('M Y') }}</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $reading->reading_date->format('M j, Y') }}</p>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <p class="text-sm text-gray-900">{{ number_format($reading->current_reading, 2) }}</p>
-                                            <p class="text-xs text-gray-500">{{ $reading->utilityType->unit }}</p>
+                                            <p class="text-sm text-gray-900 dark:text-gray-100">{{ number_format($reading->current_reading, 2) }}</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $reading->utilityType->unit }}</p>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <p class="text-sm font-medium text-gray-900">{{ number_format($reading->consumption, 2) }}</p>
-                                            <p class="text-xs text-gray-500">{{ $reading->utilityType->unit }}</p>
+                                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ number_format($reading->consumption, 2) }}</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $reading->utilityType->unit }}</p>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <p class="text-sm font-semibold text-gray-900">₱{{ number_format($reading->price ?? 0, 2) }}</p>
+                                            <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">₱{{ number_format($reading->price ?? 0, 2) }}</p>
                                             @if($reading->consumption > 0 && $reading->price > 0)
-                                                <p class="text-xs text-gray-500">₱{{ number_format($reading->price / $reading->consumption, 2) }}/{{ $reading->utilityType->unit }}</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">₱{{ number_format($reading->price / $reading->consumption, 2) }}/{{ $reading->utilityType->unit }}</p>
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-center">
                                             @if($reading->bill_id)
-                                                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
                                                     Billed
                                                 </span>
                                             @else
-                                                <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                                                <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
                                                     Pending
                                                 </span>
                                             @endif
@@ -274,31 +300,37 @@
                         $electricityReadings = $allReadings->where('utilityType.name', 'Electricity');
                     @endphp
                     
-                    <div class="bg-blue-50 p-4 rounded-lg">
-                        <p class="text-xs text-blue-700 font-medium">Total Water</p>
-                        <p class="text-lg font-bold text-blue-900">₱{{ number_format($waterReadings->sum('price'), 2) }}</p>
-                        <p class="text-xs text-blue-600">{{ number_format($waterReadings->sum('consumption'), 2) }} cu. m.</p>
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <p class="text-xs text-blue-700 dark:text-blue-300 font-medium">Total Water</p>
+                        <p class="text-lg font-bold text-blue-900 dark:text-blue-200">₱{{ number_format($waterReadings->sum('price'), 2) }}</p>
+                        <p class="text-xs text-blue-600 dark:text-blue-400">{{ number_format($waterReadings->sum('consumption'), 2) }} cu. m.</p>
                     </div>
                     
-                    <div class="bg-yellow-50 p-4 rounded-lg">
-                        <p class="text-xs text-yellow-700 font-medium">Total Electricity</p>
-                        <p class="text-lg font-bold text-yellow-900">₱{{ number_format($electricityReadings->sum('price'), 2) }}</p>
-                        <p class="text-xs text-yellow-600">{{ number_format($electricityReadings->sum('consumption'), 2) }} kWh</p>
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
+                        <p class="text-xs text-yellow-700 dark:text-yellow-300 font-medium">Total Electricity</p>
+                        <p class="text-lg font-bold text-yellow-900 dark:text-yellow-200">₱{{ number_format($electricityReadings->sum('price'), 2) }}</p>
+                        <p class="text-xs text-yellow-600 dark:text-yellow-400">{{ number_format($electricityReadings->sum('consumption'), 2) }} kWh</p>
                     </div>
                     
-                    <div class="bg-green-50 p-4 rounded-lg">
-                        <p class="text-xs text-green-700 font-medium">Total Utilities</p>
-                        <p class="text-lg font-bold text-green-900">₱{{ number_format($totalAmount, 2) }}</p>
-                        <p class="text-xs text-green-600">Last {{ $utilityReadings->count() }} billing periods</p>
+                    <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                        <p class="text-xs text-green-700 dark:text-green-300 font-medium">Total Utilities</p>
+                        <p class="text-lg font-bold text-green-900 dark:text-green-200">₱{{ number_format($totalAmount, 2) }}</p>
+                        <p class="text-xs text-green-600 dark:text-green-400">Last {{ $utilityReadings->count() }} billing periods</p>
                     </div>
                 </div>
             @else
                 <div class="text-center py-8">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">No Utility Readings</h3>
-                    <p class="mt-1 text-sm text-gray-500">No utility readings have been recorded for your room yet.</p>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No Utility Readings</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        @if(!$currentAssignment)
+                            You need to be assigned to a room before utility readings can be recorded.
+                        @else
+                            No utility readings have been recorded for your room yet.
+                        @endif
+                    </p>
                 </div>
             @endif
         </div>

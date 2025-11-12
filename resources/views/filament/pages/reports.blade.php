@@ -1,28 +1,42 @@
 <x-filament::page>
     <div class="space-y-6">
-        <!-- Report Filters -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Report Configuration</h3>
+        <!-- Report Configuration Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">Report Configuration</h3>
+            
+            <!-- Form Filters -->
             {{ $this->form }}
-            <div class="mt-4 flex space-x-2">
-                <button wire:click="generateReport" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Generate Report
-                </button>
-                <button wire:click="exportReport('csv')" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Export CSV
-                </button>
-                <button wire:click="exportReport('pdf')" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Export PDF
-                </button>
+            
+            <!-- Action Buttons - Properly Aligned -->
+            <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Generate Report Button - Warning Orange -->
+                    <x-filament::button 
+                        wire:click="generateReport" 
+                        color="warning"
+                        icon="heroicon-o-refresh"
+                        size="md">
+                        Generate Report
+                    </x-filament::button>
+                    
+                    <!-- Export CSV Button - Success Green -->
+                    <x-filament::button 
+                        wire:click="exportReport('csv')" 
+                        color="success"
+                        icon="heroicon-o-download"
+                        size="md">
+                        Export CSV
+                    </x-filament::button>
+                    
+                    <!-- Export PDF Button - Danger Red -->
+                    <x-filament::button 
+                        wire:click="exportReport('pdf')" 
+                        color="danger"
+                        icon="heroicon-o-document-download"
+                        size="md">
+                        Export PDF
+                    </x-filament::button>
+                </div>
             </div>
         </div>
 

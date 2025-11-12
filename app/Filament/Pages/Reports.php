@@ -111,7 +111,7 @@ class Reports extends Page implements HasForms
         $startDate = Carbon::parse($this->start_date);
         $endDate = Carbon::parse($this->end_date);
         
-        return $this->reportsService->getOccupancyReport($startDate, $endDate);
+        return $this->reportsService->getOccupancyReport($this->period, $startDate, $endDate);
     }
 
     public function getFinancialReportData(): array
@@ -140,12 +140,134 @@ class Reports extends Page implements HasForms
 
     public function exportReport(string $format = 'csv')
     {
-        // This would handle exporting the report
-        // For now, we'll just show a notification
+        $startDate = Carbon::parse($this->start_date);
+        $endDate = Carbon::parse($this->end_date);
+        
+        if ($format === 'csv') {
+            return $this->downloadCsv();
+        } elseif ($format === 'pdf') {
+            return $this->downloadPdf();
+        }
+    }
+    
+    public function downloadCsv()
+    {
+        $startDate = Carbon::parse($this->start_date);
+        $endDate = Carbon::parse($this->end_date);
+        
+        // Get data based on report type
+        $data = $this->getReportData();
+        
+        // Generate CSV content
+        $csv = $this->generateCsvContent($data);
+        
+        $filename = "{$this->report_type}_report_{$startDate->format('Y-m-d')}_to_{$endDate->format('Y-m-d')}.csv";
+        
+        return response()->streamDownload(function () use ($csv) {
+            echo $csv;
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+    
+    public function downloadPdf()
+    {
         Notification::make()
-            ->title('Export Coming Soon!')
-            ->body("Export to {$format} feature will be available in the next update.")
+            ->title('PDF Export Coming Soon!')
+            ->body('PDF export feature will be available in the next update. Please use CSV export for now.')
             ->warning()
             ->send();
+    }
+    
+    protected function getReportData(): array
+    {
+        $startDate = Carbon::parse($this->start_date);
+        $endDate = Carbon::parse($this->end_date);
+        
+        return match($this->report_type) {
+            'occupancy' => $this->getOccupancyReportData(),
+            'financial' => $this->getFinancialReportData(),
+            'maintenance' => $this->getMaintenanceReportData(),
+            'summary' => $this->getDashboardSummaryData(),
+            default => []
+        };
+    }
+    
+    protected function generateCsvContent(array $data): string
+    {
+        $csv = '';
+        
+        switch($this->report_type) {
+            case 'occupancy':
+                $csv .= "Occupancy Report\n";
+                $csv .= "Period: {$this->start_date} to {$this->end_date}\n\n";
+                $csv .= "Summary\n";
+                $csv .= "Metric,Value\n";
+                $csv .= "Total Rooms,{$data['summary']['total_rooms']}\n";
+                $csv .= "Occupied Rooms,{$data['summary']['current_occupancy']}\n";
+                $csv .= "Available Rooms,{$data['summary']['available_rooms']}\n";
+                $csv .= "Occupancy Rate,{$data['summary']['occupancy_rate']}%\n";
+                $csv .= "Average Duration,{$data['summary']['avg_duration_days']} days\n\n";
+                
+                $csv .= "Room Type Breakdown\n";
+                $csv .= "Type,Total,Occupied,Available,Occupancy Rate\n";
+                foreach ($data['room_type_breakdown'] as $room) {
+                    $csv .= "{$room['type']},{$room['total']},{$room['occupied']},{$room['available']},{$room['occupancy_rate']}%\n";
+                }
+                break;
+                
+            case 'financial':
+                $csv .= "Financial Report\n";
+                $csv .= "Period: {$this->start_date} to {$this->end_date}\n\n";
+                $csv .= "Summary\n";
+                $csv .= "Metric,Amount\n";
+                $csv .= "Total Revenue,₱" . number_format($data['summary']['total_revenue'], 2) . "\n";
+                $csv .= "Pending Revenue,₱" . number_format($data['summary']['pending_revenue'], 2) . "\n";
+                $csv .= "Penalty Revenue,₱" . number_format($data['summary']['penalty_revenue'], 2) . "\n";
+                $csv .= "Collection Rate,{$data['summary']['collection_rate']}%\n\n";
+                
+                $csv .= "Revenue by Type\n";
+                $csv .= "Type,Paid Amount,Pending Amount,Total Amount,Bill Count\n";
+                foreach ($data['revenue_by_type'] as $type) {
+                    $csv .= "{$type['type']},₱" . number_format($type['paid_amount'], 2) . ",₱" . number_format($type['pending_amount'], 2) . ",₱" . number_format($type['total_amount'], 2) . ",{$type['bill_count']}\n";
+                }
+                break;
+                
+            case 'maintenance':
+                $csv .= "Maintenance Report\n";
+                $csv .= "Period: {$this->start_date} to {$this->end_date}\n\n";
+                $csv .= "Summary\n";
+                $csv .= "Metric,Value\n";
+                $csv .= "Total Requests,{$data['summary']['total_requests']}\n";
+                $csv .= "Pending Requests,{$data['summary']['pending']}\n";
+                $csv .= "In Progress,{$data['summary']['in_progress']}\n";
+                $csv .= "Completed,{$data['summary']['completed']}\n";
+                $csv .= "Average Completion Time,{$data['summary']['avg_completion_time']} days\n";
+                $csv .= "Completion Rate,{$data['summary']['completion_rate']}%\n\n";
+                
+                $csv .= "Requests by Priority\n";
+                $csv .= "Priority,Count,Percentage\n";
+                foreach ($data['by_priority'] as $priority) {
+                    $csv .= "{$priority['priority']},{$priority['count']},{$priority['percentage']}%\n";
+                }
+                break;
+                
+            case 'summary':
+                $csv .= "Dashboard Summary Report\n";
+                $csv .= "Period: {$this->start_date} to {$this->end_date}\n\n";
+                $csv .= "Key Metrics\n";
+                $csv .= "Metric,Value\n";
+                $csv .= "Total Rooms,{$data['occupancy']['total_rooms']}\n";
+                $csv .= "Occupied Rooms,{$data['occupancy']['occupied_rooms']}\n";
+                $csv .= "Occupancy Rate,{$data['occupancy']['occupancy_rate']}%\n";
+                $csv .= "Total Revenue,₱" . number_format($data['financial']['total_revenue'], 2) . "\n";
+                $csv .= "Pending Revenue,₱" . number_format($data['financial']['pending_revenue'], 2) . "\n";
+                $csv .= "Total Maintenance Requests,{$data['maintenance']['total_requests']}\n";
+                $csv .= "Pending Maintenance,{$data['maintenance']['pending']}\n";
+                break;
+        }
+        
+        return $csv;
     }
 }
