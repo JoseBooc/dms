@@ -4,12 +4,12 @@
         <div class="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 rounded-lg p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-2xl font-bold mb-2 text-white">Welcome, {{ auth()->user()->name }}!</h2>
-                    <p class="text-blue-100">Here's a comprehensive summary of your tenancy with us</p>
+                    <h2 class="text-2xl font-bold mb-2 !text-white">Welcome, {{ auth()->user()->name }}!</h2>
+                    <p class="!text-blue-100 dark:!text-blue-200">Here's a comprehensive summary of your tenancy with us</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-sm text-blue-100">Member Since</p>
-                    <p class="text-xl font-semibold text-white">{{ $tenancyStats['member_since'] ?? 'N/A' }}</p>
+                    <p class="text-sm !text-blue-100 dark:!text-blue-200">Member Since</p>
+                    <p class="text-xl font-semibold !text-white">{{ $tenancyStats['member_since'] ?? 'N/A' }}</p>
                 </div>
             </div>
         </div>

@@ -23,6 +23,13 @@ class MyRentInformation extends Page
     
     protected static ?string $title = 'My Rent Information';
 
+    protected static ?string $slug = 'my-rent-information';
+
+    public static function getRouteName(): string
+    {
+        return 'filament.pages.my-rent-information';
+    }
+
     public static function canAccess(): bool
     {
         return Auth::user()?->role === 'tenant';
