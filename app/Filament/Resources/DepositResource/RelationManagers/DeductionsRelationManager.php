@@ -219,7 +219,11 @@ class DeductionsRelationManager extends RelationManager
             ->bulkActions([
                 // Bulk delete removed - use archive actions instead
             ])
-            ->defaultSort('deduction_date', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) => $query->withTrashed());
+            ->defaultSort('deduction_date', 'desc');
+    }
+
+    protected function getTableQuery(): Builder
+    {
+        return parent::getTableQuery()->withTrashed();
     }    
 }

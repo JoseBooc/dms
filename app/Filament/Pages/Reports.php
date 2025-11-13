@@ -138,18 +138,6 @@ class Reports extends Page implements HasForms
         return $this->reportsService->getDashboardSummary($startDate, $endDate);
     }
 
-    public function exportReport(string $format = 'csv')
-    {
-        $startDate = Carbon::parse($this->start_date);
-        $endDate = Carbon::parse($this->end_date);
-        
-        if ($format === 'csv') {
-            return $this->downloadCsv();
-        } elseif ($format === 'pdf') {
-            return $this->downloadPdf();
-        }
-    }
-    
     public function downloadCsv()
     {
         $startDate = Carbon::parse($this->start_date);
@@ -169,15 +157,6 @@ class Reports extends Page implements HasForms
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
-    }
-    
-    public function downloadPdf()
-    {
-        Notification::make()
-            ->title('PDF Export Coming Soon!')
-            ->body('PDF export feature will be available in the next update. Please use CSV export for now.')
-            ->warning()
-            ->send();
     }
     
     protected function getReportData(): array

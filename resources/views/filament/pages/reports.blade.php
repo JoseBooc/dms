@@ -27,15 +27,6 @@
                         size="md">
                         Export CSV
                     </x-filament::button>
-                    
-                    <!-- Export PDF Button - Danger Red -->
-                    <x-filament::button 
-                        wire:click="exportReport('pdf')" 
-                        color="danger"
-                        icon="heroicon-o-document-download"
-                        size="md">
-                        Export PDF
-                    </x-filament::button>
                 </div>
             </div>
         </div>
