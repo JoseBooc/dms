@@ -170,10 +170,18 @@ class ComplaintResource extends Resource
                             ->required()
                             ->default('pending')
                             ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set) {
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $record) {
                                 // Auto-set resolved_at when status becomes resolved or closed
                                 if (in_array($state, ['resolved', 'closed'])) {
                                     $set('resolved_at', now());
+                                }
+                                
+                                // Clear actions_taken when status is set back to investigating from resolved/completed
+                                if ($state === 'investigating' && $record) {
+                                    $oldStatus = $record->getOriginal('status');
+                                    if (in_array($oldStatus, ['resolved', 'closed'])) {
+                                        $set('actions_taken', null);
+                                    }
                                 }
                             }),
                             
@@ -188,6 +196,27 @@ class ComplaintResource extends Resource
                                 $get('status') === 'investigating' 
                                     ? 'Required when status is "Investigating"' 
                                     : 'Optional for other statuses'
+                            ),
+
+                        Forms\Components\Textarea::make('staff_notes')
+                            ->label('Investigation Notes')
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->placeholder('Add investigation notes...')
+                            ->visible(fn (callable $get) => in_array($get('status'), ['investigating', 'resolved', 'closed']))
+                            ->helperText('Visible to tenants and administrators'),
+
+                        Forms\Components\Textarea::make('actions_taken')
+                            ->label('Actions Taken')
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->required(fn (callable $get) => in_array($get('status'), ['resolved', 'closed']))
+                            ->placeholder('Describe the actions taken to resolve this complaint...')
+                            ->visible(fn (callable $get) => in_array($get('status'), ['investigating', 'resolved', 'closed']))
+                            ->helperText(fn (callable $get) => 
+                                in_array($get('status'), ['resolved', 'closed'])
+                                    ? 'Required when status is "Resolved" or "Closed". Visible to tenants and administrators.' 
+                                    : 'Optional for investigating status'
                             ),
                             
                         Forms\Components\Textarea::make('resolution')

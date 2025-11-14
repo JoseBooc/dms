@@ -54,15 +54,47 @@ class TenantDashboard extends Page
     public function getViewData(): array
     {
         $user = Auth::user();
+        
+        // Ensure user exists and is a tenant
+        if (!$user || $user->role !== 'tenant') {
+            return [
+                'currentAssignment' => null,
+                'recentBills' => collect(),
+                'maintenanceRequests' => collect(),
+                'stats' => [
+                    'total_bills' => 0,
+                    'unpaid_bills' => 0,
+                    'pending_maintenance' => 0,
+                ],
+                'maintenanceStats' => [
+                    'total_requests' => 0,
+                    'pending_requests' => 0,
+                    'in_progress_requests' => 0,
+                    'completed_requests' => 0,
+                ],
+                'utilityReadings' => collect(),
+            ];
+        }
+        
         $tenant = $user->tenant;
         
+        // If tenant relationship doesn't exist, return empty data
         if (!$tenant) {
             return [
                 'currentAssignment' => null,
                 'recentBills' => collect(),
                 'maintenanceRequests' => collect(),
-                'stats' => [],
-                'maintenanceStats' => [],
+                'stats' => [
+                    'total_bills' => 0,
+                    'unpaid_bills' => 0,
+                    'pending_maintenance' => 0,
+                ],
+                'maintenanceStats' => [
+                    'total_requests' => 0,
+                    'pending_requests' => 0,
+                    'in_progress_requests' => 0,
+                    'completed_requests' => 0,
+                ],
                 'utilityReadings' => collect(),
             ];
         }
@@ -91,6 +123,7 @@ class TenantDashboard extends Page
         if ($currentAssignment && $currentAssignment->room_id) {
             $utilityReadings = UtilityReading::where('room_id', $currentAssignment->room_id)
                 ->where('tenant_id', $tenant->id)
+                ->whereHas('utilityType') // Only include readings with valid utility types
                 ->with(['utilityType', 'room'])
                 ->orderBy('reading_date', 'desc')
                 ->take(10)

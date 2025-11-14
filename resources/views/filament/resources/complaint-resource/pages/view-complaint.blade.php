@@ -107,6 +107,22 @@
                     </dd>
                 </div>
 
+                <!-- Investigation Notes -->
+                @if($record->staff_notes)
+                    <div class="md:col-span-2">
+                        <dt class="text-sm font-medium text-gray-500 mb-1">Investigation Notes</dt>
+                        <dd class="text-sm text-gray-900 bg-blue-50 p-3 rounded-md border border-blue-200">{{ $record->staff_notes }}</dd>
+                    </div>
+                @endif
+
+                <!-- Actions Taken -->
+                @if($record->actions_taken)
+                    <div class="md:col-span-2">
+                        <dt class="text-sm font-medium text-gray-500 mb-1">Actions Taken</dt>
+                        <dd class="text-sm text-gray-900 bg-green-50 p-3 rounded-md border border-green-200">{{ $record->actions_taken }}</dd>
+                    </div>
+                @endif
+
                 <!-- Resolution -->
                 @if($record->resolution)
                     <div class="md:col-span-2">

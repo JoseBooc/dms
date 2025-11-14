@@ -2,9 +2,26 @@
     <div class="space-y-6">
         <!-- Welcome Section -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Welcome, {{ auth()->user()->name }}!</h2>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Welcome, {{ auth()->user()->name ?? 'Tenant' }}!</h2>
             <p class="text-gray-600 dark:text-gray-400">Here's an overview of your tenancy information.</p>
         </div>
+
+        <!-- Tenant Setup Warning (if no tenant record exists) -->
+        @if(($stats['total_bills'] ?? 0) === 0 && ($maintenanceStats['total_requests'] ?? 0) === 0 && !$currentAssignment)
+            <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-orange-800 dark:text-orange-200">Account Setup Incomplete</h3>
+                        <p class="mt-2 text-sm text-orange-700 dark:text-orange-300">Your tenant profile hasn't been fully set up yet. Please contact the administrator to complete your account setup and room assignment.</p>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Maintenance Overview -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -240,7 +257,7 @@
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                         <td class="px-4 py-3 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                @if($reading->utilityType->name === 'Water')
+                                                @if($reading->utilityType && $reading->utilityType->name === 'Water')
                                                     <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                                     </svg>
@@ -250,8 +267,8 @@
                                                     </svg>
                                                 @endif
                                                 <div>
-                                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $reading->utilityType->name }}</p>
-                                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $reading->utilityType->unit }}</p>
+                                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $reading->utilityType->name ?? 'Unknown Utility' }}</p>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $reading->utilityType->unit ?? '' }}</p>
                                                 </div>
                                             </div>
                                         </td>

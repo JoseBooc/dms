@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Complaint;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
@@ -24,6 +25,10 @@ class StaffComplaints extends Page implements HasForms
 
     public $selectedComplaint = null;
     public $showModal = false;
+    public $showNotesModal = false;
+    public $showResolveModal = false;
+    public $staffNotes = '';
+    public $actionsTaken = '';
 
     public static function canAccess(): bool
     {
@@ -71,28 +76,21 @@ class StaffComplaints extends Page implements HasForms
             return;
         }
 
-        $updateData = ['status' => $status];
+        // If trying to resolve, open resolve modal instead
         if ($status === 'resolved') {
-            $updateData['resolved_at'] = now();
-        } elseif ($status === 'completed') {
-            $updateData['resolved_at'] = now();
+            $this->openResolveModal($complaintId);
+            return;
         }
 
-        $complaint->update($updateData);
+        $complaint->update(['status' => $status]);
         
-        if ($status === 'resolved') {
-            Notification::make()
-                ->title('Complaint Marked as Resolved')
-                ->body("Complaint #{$complaintId} has been marked as resolved")
-                ->success()
-                ->send();
-        } else {
-            Notification::make()
-                ->title('Status Updated')
-                ->body("Complaint #{$complaintId} status updated to {$status}")
-                ->success()
-                ->send();
-        }
+        $statusLabel = ucfirst(str_replace('_', ' ', $status));
+        
+        Notification::make()
+            ->title('Status Updated')
+            ->body("Complaint #{$complaintId} status changed to {$statusLabel}")
+            ->success()
+            ->send();
     }
 
     public function openDetailsModal($complaintId)
@@ -107,30 +105,108 @@ class StaffComplaints extends Page implements HasForms
         $this->selectedComplaint = null;
     }
 
-    public function addResolution($complaintId, $resolution)
+    public function openNotesModal($complaintId)
     {
         $complaint = Complaint::findOrFail($complaintId);
         
         if ($complaint->assigned_to !== Auth::id()) {
             Notification::make()
                 ->title('Access Denied')
-                ->body('You can only update complaints assigned to you.')
+                ->body('You can only edit complaints assigned to you.')
                 ->danger()
                 ->send();
             return;
         }
 
-        $complaint->update([
-            'resolution' => $resolution,
+        if ($complaint->status === 'resolved' || $complaint->status === 'completed') {
+            Notification::make()
+                ->title('Cannot Edit')
+                ->body('You cannot edit notes for resolved or completed complaints.')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        $this->selectedComplaint = $complaint;
+        $this->staffNotes = $complaint->staff_notes ?? '';
+        $this->showNotesModal = true;
+    }
+
+    public function closeNotesModal()
+    {
+        $this->showNotesModal = false;
+        $this->selectedComplaint = null;
+        $this->staffNotes = '';
+    }
+
+    public function saveNotes()
+    {
+        if (!$this->selectedComplaint) {
+            return;
+        }
+
+        $this->selectedComplaint->update([
+            'staff_notes' => $this->staffNotes
+        ]);
+
+        Notification::make()
+            ->title('Notes Updated')
+            ->body('Investigation notes have been saved.')
+            ->success()
+            ->send();
+
+        $this->closeNotesModal();
+    }
+
+    public function openResolveModal($complaintId)
+    {
+        $complaint = Complaint::findOrFail($complaintId);
+        
+        if ($complaint->assigned_to !== Auth::id()) {
+            Notification::make()
+                ->title('Access Denied')
+                ->body('You can only resolve complaints assigned to you.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $this->selectedComplaint = $complaint;
+        $this->actionsTaken = $complaint->actions_taken ?? '';
+        $this->showResolveModal = true;
+    }
+
+    public function closeResolveModal()
+    {
+        $this->showResolveModal = false;
+        $this->selectedComplaint = null;
+        $this->actionsTaken = '';
+    }
+
+    public function resolveComplaint()
+    {
+        if (!$this->selectedComplaint || empty($this->actionsTaken)) {
+            Notification::make()
+                ->title('Actions Required')
+                ->body('You must specify the actions taken to resolve this complaint.')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        $this->selectedComplaint->update([
+            'actions_taken' => $this->actionsTaken,
             'status' => 'resolved',
             'resolved_at' => now()
         ]);
-        
+
         Notification::make()
             ->title('Complaint Resolved')
-            ->body("Complaint #{$complaintId} has been resolved with resolution notes")
+            ->body("Complaint #{$this->selectedComplaint->id} has been resolved.")
             ->success()
             ->send();
+
+        $this->closeResolveModal();
     }
 
     protected function getActions(): array

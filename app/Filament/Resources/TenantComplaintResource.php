@@ -89,6 +89,46 @@ class TenantComplaintResource extends Resource
                             ->placeholder('Please provide detailed information about your complaint'),
                     ])
                     ->columns(2),
+                    
+                Forms\Components\Section::make('Status Information')
+                    ->schema([
+                        Forms\Components\Placeholder::make('status')
+                            ->label('Current Status')
+                            ->content(fn ($record) => $record ? ucwords(str_replace('_', ' ', $record->status)) : 'Pending'),
+                            
+                        Forms\Components\Placeholder::make('assignedTo.name')
+                            ->label('Assigned To')
+                            ->content(fn ($record) => $record?->assignedTo?->name ?: 'Not assigned yet'),
+                            
+                        Forms\Components\Textarea::make('staff_notes')
+                            ->label('Investigation Notes')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->rows(3)
+                            ->placeholder('No investigation notes yet')
+                            ->visible(fn ($record) => $record?->staff_notes)
+                            ->helperText('Notes from staff during investigation'),
+                            
+                        Forms\Components\Textarea::make('actions_taken')
+                            ->label('Actions Taken')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->rows(3)
+                            ->placeholder('No actions taken yet')
+                            ->visible(fn ($record) => $record?->actions_taken)
+                            ->helperText('Actions taken by staff to resolve this complaint'),
+                            
+                        Forms\Components\Textarea::make('resolution')
+                            ->label('Resolution')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->rows(3)
+                            ->placeholder('No resolution yet')
+                            ->visible(fn ($record) => $record?->resolution)
+                            ->helperText('Final resolution details'),
+                    ])
+                    ->columns(2)
+                    ->visible(fn ($record) => $record !== null), // Only show in view/edit, not create
             ]);
     }
 
