@@ -108,8 +108,10 @@ class TenantAnalytics extends Page
             'current_status' => $currentAssignment?->status ?? 'No active assignment',
             'current_stay_days' => $currentStayDays,
             'current_stay_months' => round($currentStayDays / 30, 1),
+            'current_stay_formatted' => $this->formatDuration($currentStayDays),
             'total_stay_days' => $totalStayDays,
             'total_stay_months' => round($totalStayDays / 30, 1),
+            'total_stay_formatted' => $this->formatDuration($totalStayDays),
             'start_date' => $currentAssignment?->start_date ? Carbon::parse($currentAssignment->start_date)->format('M d, Y') : 'N/A',
             'member_since' => $tenant->created_at->format('M d, Y'),
         ];
@@ -286,5 +288,32 @@ class TenantAnalytics extends Page
         }
         
         return $activities->sortByDesc('date')->take(10)->values()->toArray();
+    }
+
+    protected function formatDuration($days): string
+    {
+        if ($days <= 0) {
+            return '0 days';
+        }
+
+        $years = intval($days / 365);
+        $months = intval(($days % 365) / 30);
+        $remainingDays = $days % 30;
+
+        $parts = [];
+        
+        if ($years > 0) {
+            $parts[] = $years . ($years == 1 ? ' year' : ' years');
+        }
+        
+        if ($months > 0) {
+            $parts[] = $months . ($months == 1 ? ' month' : ' months');
+        }
+        
+        if ($remainingDays > 0 || empty($parts)) {
+            $parts[] = $remainingDays . ($remainingDays == 1 ? ' day' : ' days');
+        }
+
+        return implode(', ', $parts);
     }
 }

@@ -21,6 +21,8 @@ class Complaint extends Model
         'attachments',
         'assigned_to',
         'resolution',
+        'staff_notes',
+        'actions_taken',
         'resolved_at'
     ];
 
@@ -92,11 +94,17 @@ class Complaint extends Model
     // Mutators
     public function setStatusAttribute($value)
     {
+        $old_status = $this->attributes['status'] ?? null;
         $this->attributes['status'] = $value;
         
         // Auto-set resolved_at when status becomes resolved or closed
         if (in_array($value, ['resolved', 'closed']) && !$this->resolved_at) {
             $this->attributes['resolved_at'] = now();
+        }
+        
+        // Clear actions_taken when status is set back to investigating from resolved/completed
+        if ($value === 'investigating' && in_array($old_status, ['resolved', 'completed'])) {
+            $this->attributes['actions_taken'] = null;
         }
     }
 }
