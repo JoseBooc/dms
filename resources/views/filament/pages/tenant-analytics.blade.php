@@ -16,7 +16,7 @@
 
         <!-- Quick Stats Overview -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <!-- Current Stay -->
+            <!-- Total Time -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div class="text-center">
                     <div class="flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-blue-100 dark:bg-blue-900/50">
@@ -24,9 +24,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
                     </div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Stay</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ $tenancyStats['current_stay_months'] ?? 0 }}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500">months</p>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Time</p>
+                    <p class="text-lg font-semibold text-gray-900 dark:text-gray-100 min-h-[3rem] flex items-center justify-center">{{ $tenancyStats['total_stay_formatted'] ?? '0 days' }}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500">{{ $tenancyStats['total_stay_days'] ?? 0 }} days</p>
                 </div>
             </div>
 
@@ -90,12 +90,8 @@
                         <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $tenancyStats['total_assignments'] ?? 0 }}</span>
                     </div>
                     <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                        <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Current Stay Duration</span>
-                        <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $tenancyStats['current_stay_days'] ?? 0 }} days</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
                         <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Time as Tenant</span>
-                        <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $tenancyStats['total_stay_months'] ?? 0 }} months</span>
+                        <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $tenancyStats['total_stay_formatted'] ?? '0 days' }}</span>
                     </div>
                     <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
                         <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Move-in Date</span>
