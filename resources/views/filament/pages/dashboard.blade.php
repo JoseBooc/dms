@@ -132,14 +132,14 @@
                         <span class="text-sm font-medium">Manage Rooms</span>
                     </a>
                     
-                    <a href="{{ url('/dashboard/users') }}" class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <a href="{{ url('/dashboard/tenants') }}" class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors">
                         <svg class="w-5 h-5 text-green-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
                         </svg>
                         <span class="text-sm font-medium">Manage Tenants</span>
                     </a>
                     
-                    <a href="{{ url('/dashboard/bills') }}" class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <a href="{{ url('/dashboard/billing') }}" class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors">
                         <svg class="w-5 h-5 text-yellow-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
                             <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/>
