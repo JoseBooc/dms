@@ -2,33 +2,8 @@
     <div class="space-y-6">
         <!-- Report Configuration Section -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">Report Configuration</h3>
-            
             <!-- Form Filters -->
             {{ $this->form }}
-            
-            <!-- Action Buttons - Properly Aligned -->
-            <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div class="flex flex-wrap items-center gap-3">
-                    <!-- Generate Report Button - Warning Orange -->
-                    <x-filament::button 
-                        wire:click="generateReport" 
-                        color="warning"
-                        icon="heroicon-o-refresh"
-                        size="md">
-                        Generate Report
-                    </x-filament::button>
-                    
-                    <!-- Export CSV Button - Success Green -->
-                    <x-filament::button 
-                        wire:click="exportReport('csv')" 
-                        color="success"
-                        icon="heroicon-o-download"
-                        size="md">
-                        Export CSV
-                    </x-filament::button>
-                </div>
-            </div>
         </div>
 
         <!-- Report Content -->
@@ -108,18 +83,17 @@
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h3 class="text-lg font-medium text-gray-900">Room Type Breakdown</h3>
                         </div>
-                        <div class="p-6">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room Type</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Occupied</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Occupancy Rate</th>
-                                        </tr>
-                                    </thead>
+                        <div class="overflow-x-auto">
+                            <table class="w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Occupied</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Occupancy Rate</th>
+                                    </tr>
+                                </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         @foreach($reportData['room_type_breakdown'] as $type)
                                             <tr>
@@ -221,31 +195,29 @@
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h3 class="text-lg font-medium text-gray-900">Revenue by Bill Type</h3>
                         </div>
-                        <div class="p-6">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
+                        <div class="overflow-x-auto">
+                            <table class="w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid Amount</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Amount</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach($reportData['revenue_by_type'] as $type)
                                         <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Type</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid Amount</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Amount</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Count</th>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ ucfirst($type['type']) }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">₱{{ number_format($type['paid_amount'], 2) }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-600">₱{{ number_format($type['pending_amount'], 2) }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₱{{ number_format($type['total_amount'], 2) }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $type['bill_count'] }}</td>
                                         </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        @foreach($reportData['revenue_by_type'] as $type)
-                                            <tr>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ ucfirst($type['type']) }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">₱{{ number_format($type['paid_amount'], 2) }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-600">₱{{ number_format($type['pending_amount'], 2) }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₱{{ number_format($type['total_amount'], 2) }}</td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $type['bill_count'] }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -442,7 +414,7 @@
                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <h3 class="mt-2 text-sm font-medium text-gray-900">Select a report type</h3>
-                        <p class="mt-1 text-sm text-gray-500">Choose a report type and generate to view analytics.</p>
+                        <p class="mt-1 text-sm text-gray-500">Choose a report type to generate and view analytics.</p>
                     </div>
                 </div>
         @endswitch

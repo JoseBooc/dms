@@ -36,7 +36,7 @@ class Reports extends Page implements HasForms
     protected ReportsService $reportsService;
 
     // Form data
-    public $report_type = 'occupancy';
+    public $report_type = null;
     public $period = 'monthly';
     public $start_date;
     public $end_date;
@@ -64,7 +64,7 @@ class Reports extends Page implements HasForms
                         'maintenance' => 'Maintenance Report',
                         'summary' => 'Dashboard Summary'
                     ])
-                    ->default('occupancy')
+                    ->placeholder('Select an option')
                     ->reactive(),
 
                 Select::make('period')
