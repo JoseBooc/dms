@@ -271,7 +271,7 @@
                     </div>
                     
                     <div class="pt-2">
-                        <a href="{{ url('/dashboard/bills') }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        <a href="{{ url('/dashboard/billing') }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
                             View All Bills →
                         </a>
                     </div>

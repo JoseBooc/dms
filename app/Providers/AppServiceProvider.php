@@ -7,7 +7,13 @@ use Filament\Facades\Filament;
 use Livewire\Livewire;
 use App\Http\Livewire\NotificationDropdown;
 use App\Models\Bill;
+use App\Models\MaintenanceRequest;
+use App\Models\Complaint;
+use App\Models\UtilityReading;
 use App\Observers\BillObserver;
+use App\Observers\MaintenanceRequestObserver;
+use App\Observers\ComplaintObserver;
+use App\Observers\UtilityReadingObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +36,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register observers
         Bill::observe(BillObserver::class);
+        MaintenanceRequest::observe(MaintenanceRequestObserver::class);
+        Complaint::observe(ComplaintObserver::class);
+        UtilityReading::observe(UtilityReadingObserver::class);
 
         // Register the Livewire component
         Livewire::component('notification-dropdown', NotificationDropdown::class);

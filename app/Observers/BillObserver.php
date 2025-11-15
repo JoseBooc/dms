@@ -3,6 +3,9 @@
 namespace App\Observers;
 
 use App\Models\Bill;
+use App\Models\User;
+use App\Notifications\PenaltyChargeNotification;
+use App\Notifications\BillOverdueNotification;
 use Illuminate\Support\Facades\Log;
 
 class BillObserver
@@ -22,7 +25,17 @@ class BillObserver
      */
     public function updated(Bill $bill): void
     {
-        // Only process status changes
+        // Handle penalty charge notifications
+        if ($bill->wasChanged('penalty_amount') && $bill->penalty_amount > 0) {
+            $this->handlePenaltyCharge($bill);
+        }
+
+        // Handle overdue bill notifications
+        if ($bill->wasChanged('status') && $bill->status === 'overdue') {
+            $this->handleOverdueBill($bill);
+        }
+
+        // Only process utility reading status changes for bill status
         if (!$bill->wasChanged('status')) {
             return;
         }
@@ -135,6 +148,40 @@ class BillObserver
                 'bill_id' => $bill->id,
                 'tenant_id' => $bill->tenant_id,
                 'previous_status' => $reading->getOriginal('status'),
+            ]);
+        }
+    }
+
+    /**
+     * Handle penalty charge notifications
+     */
+    protected function handlePenaltyCharge(Bill $bill): void
+    {
+        $tenant = User::find($bill->tenant_id);
+        if ($tenant) {
+            $tenant->notify(new PenaltyChargeNotification($bill));
+            
+            Log::info('Penalty charge notification sent', [
+                'bill_id' => $bill->id,
+                'tenant_id' => $bill->tenant_id,
+                'penalty_amount' => $bill->penalty_amount,
+            ]);
+        }
+    }
+
+    /**
+     * Handle overdue bill notifications
+     */
+    protected function handleOverdueBill(Bill $bill): void
+    {
+        $tenant = User::find($bill->tenant_id);
+        if ($tenant) {
+            $tenant->notify(new BillOverdueNotification($bill));
+            
+            Log::info('Overdue bill notification sent', [
+                'bill_id' => $bill->id,
+                'tenant_id' => $bill->tenant_id,
+                'days_overdue' => $bill->overdue_days,
             ]);
         }
     }
