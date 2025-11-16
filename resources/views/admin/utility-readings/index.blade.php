@@ -76,8 +76,8 @@
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900">{{ $reading->utilityType->name }}</div>
-                                                <div class="text-sm text-gray-500">{{ $reading->utilityType->unit_of_measurement }}</div>
+                                                <div class="text-sm text-gray-900">{{ $reading->utilityType ? $reading->utilityType->name : 'Unknown' }}</div>
+                                                <div class="text-sm text-gray-500">{{ $reading->utilityType ? $reading->utilityType->unit_of_measurement : '' }}</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="text-sm font-medium text-gray-900">

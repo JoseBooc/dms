@@ -668,7 +668,7 @@ class UtilityReadingResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['room', 'tenant', 'recordedBy']);
+            ->with(['room', 'tenant', 'recordedBy', 'utilityType']);
     }
     
     public static function getPages(): array

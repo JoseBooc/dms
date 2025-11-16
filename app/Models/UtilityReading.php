@@ -158,7 +158,7 @@ class UtilityReading extends Model
             }
             
             // Legacy fields support
-            if (!$reading->previous_reading) {
+            if (!$reading->previous_reading && $reading->exists) {
                 $reading->previous_reading = $reading->getPreviousReading();
             }
             if ($reading->current_reading && $reading->previous_reading) {
@@ -172,13 +172,18 @@ class UtilityReading extends Model
      */
     public function getPreviousReading(): float
     {
+        // If we don't have required fields, return 0
+        if (!$this->tenant_id || !$this->utility_type_id) {
+            return 0.0;
+        }
+
         $previous = static::where('tenant_id', $this->tenant_id)
             ->where('utility_type_id', $this->utility_type_id)
-            ->where('id', '!=', $this->id)
+            ->where('id', '!=', $this->id ?: 0) // Handle case where id might be null for unsaved models
             ->orderBy('reading_date', 'desc')
             ->first();
         
-        return $previous ? $previous->current_reading : 0;
+        return $previous && $previous->current_reading !== null ? (float) $previous->current_reading : 0.0;
     }
 
     // Relationships
@@ -231,7 +236,7 @@ class UtilityReading extends Model
      */
     public function getTotalAmountAttribute(): float
     {
-        return $this->price ?? $this->calculateCost();
+        return (float) ($this->price ?? $this->calculateCost());
     }
 
     /**
@@ -253,7 +258,7 @@ class UtilityReading extends Model
     /**
      * Calculate the cost of this utility reading based on consumption and current rate
      */
-    public function calculateCost()
+    public function calculateCost(): float
     {
         // Get the current rate for this utility type
         $rate = UtilityRate::where('utility_type_id', $this->utility_type_id)
@@ -266,10 +271,13 @@ class UtilityReading extends Model
             ->first();
 
         if (!$rate) {
-            return 0; // No rate found, return 0
+            return 0.0; // No rate found, return 0
         }
 
-        return $this->consumption * $rate->rate_per_unit;
+        $consumption = $this->consumption ?? 0.0;
+        $ratePerUnit = $rate->rate_per_unit ?? 0.0;
+        
+        return (float) ($consumption * $ratePerUnit);
     }
 
     /**
