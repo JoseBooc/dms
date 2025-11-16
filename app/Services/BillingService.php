@@ -54,9 +54,11 @@ class BillingService
         ];
 
         foreach ($readings as $reading) {
-            $utilityName = strtolower($reading->utilityType->name);
-            if (isset($charges[$utilityName])) {
-                $charges[$utilityName] += $reading->amount;
+            if ($reading->utilityType) {
+                $utilityName = strtolower($reading->utilityType->name);
+                if (isset($charges[$utilityName])) {
+                    $charges[$utilityName] += $reading->amount;
+                }
             }
         }
 

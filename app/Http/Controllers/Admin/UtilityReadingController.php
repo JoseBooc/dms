@@ -15,7 +15,9 @@ class UtilityReadingController extends Controller
      */
     public function index()
     {
-        $utilityReadings = UtilityReading::latest()->paginate(10);
+        $utilityReadings = UtilityReading::with(['utilityType', 'room', 'tenant', 'recordedBy'])
+            ->latest()
+            ->paginate(10);
         return view('admin.utility-readings.index', compact('utilityReadings'));
     }
 

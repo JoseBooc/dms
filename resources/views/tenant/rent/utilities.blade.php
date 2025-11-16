@@ -169,13 +169,13 @@
                                 @foreach($utilityReadings as $reading)
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {{ $reading->utilityType->name }}
+                                            {{ $reading->utilityType ? $reading->utilityType->name : 'Unknown' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ number_format($reading->reading_value, 2) }} {!! $reading->utilityType->unit !!}
+                                            {{ number_format($reading->reading_value, 2) }} {!! $reading->utilityType ? $reading->utilityType->unit : '' !!}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $reading->previous_reading ? number_format($reading->previous_reading, 2) : 'N/A' }} {!! $reading->utilityType->unit !!}
+                                            {{ $reading->previous_reading ? number_format($reading->previous_reading, 2) : 'N/A' }} {!! $reading->utilityType ? $reading->utilityType->unit : '' !!}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             @if($reading->previous_reading)
