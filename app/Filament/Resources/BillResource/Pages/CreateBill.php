@@ -37,7 +37,7 @@ class CreateBill extends CreateRecord
         // Find the tenant associated with this bill
         $tenant = User::find($bill->tenant_id);
         
-        if ($tenant) {
+        if ($tenant && $tenant->role === 'tenant') {
             // Send notification to the tenant
             $tenant->notify(new NewBillNotification($bill));
         }

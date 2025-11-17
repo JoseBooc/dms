@@ -6,6 +6,7 @@ use App\Services\ReportsService;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Placeholder;
 use Filament\Pages\Page;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -37,9 +38,13 @@ class Reports extends Page implements HasForms
 
     // Form data
     public $report_type = null;
-    public $period = 'monthly';
+    public $period = null;
     public $start_date;
     public $end_date;
+    public $current_period_start;
+    public $period_display = '';
+
+    protected $listeners = ['refreshComponent' => '$refresh'];
 
     public function boot(): void
     {
@@ -48,7 +53,8 @@ class Reports extends Page implements HasForms
 
     public function mount(): void
     {
-        $this->start_date = Carbon::now()->subMonths(6)->format('Y-m-d');
+        $this->period = null;
+        $this->start_date = Carbon::now()->startOfYear()->format('Y-m-d');
         $this->end_date = Carbon::now()->format('Y-m-d');
     }
 
@@ -75,18 +81,133 @@ class Reports extends Page implements HasForms
                         'quarterly' => 'Quarterly',
                         'yearly' => 'Yearly'
                     ])
-                    ->default('monthly'),
+                    ->placeholder('Select an option')
+                    ->reactive()
+                    ->afterStateUpdated(function ($state) {
+                        $this->initializePeriod($state);
+                    }),
 
                 DatePicker::make('start_date')
                     ->label('Start Date')
                     ->required()
-                    ->default(Carbon::now()->subMonths(6)),
+                    ->reactive()
+                    ->hidden(fn () => !empty($this->period)),
 
                 DatePicker::make('end_date')
                     ->label('End Date')
                     ->required()
-                    ->default(Carbon::now()),
+                    ->reactive()
+                    ->hidden(fn () => !empty($this->period)),
+
+                Placeholder::make('period_navigation')
+                    ->label('Period Navigation')
+                    ->content(function () {
+                        if (empty($this->period)) {
+                            return '';
+                        }
+                        return view('components.period-navigation', [
+                            'period' => $this->period,
+                            'display' => $this->period_display ?: 'View',
+                            'canGoPrevious' => true,
+                            'canGoNext' => true
+                        ]);
+                    })
+                    ->columnSpan(2)
+                    ->hidden(fn () => empty($this->period)),
             ])
+        ];
+    }
+    
+    public function initializePeriod($period)
+    {
+        if (!$period) {
+            $this->period = null;
+            $this->period_display = '';
+            return;
+        }
+        
+        $this->period = $period;
+        $this->current_period_start = Carbon::now();
+        $this->updatePeriodDates();
+    }
+    
+    public function updatePeriodDates()
+    {
+        $start = $this->current_period_start->copy();
+        
+        switch ($this->period) {
+            case 'weekly':
+                $this->start_date = $start->startOfWeek()->format('Y-m-d');
+                $this->end_date = $start->copy()->endOfWeek()->format('Y-m-d');
+                $this->period_display = $start->format('M j') . ' - ' . $start->copy()->endOfWeek()->format('M j, Y');
+                break;
+                
+            case 'monthly':
+                $this->start_date = $start->startOfMonth()->format('Y-m-d');
+                $this->end_date = $start->copy()->endOfMonth()->format('Y-m-d');
+                $this->period_display = $start->format('F Y');
+                break;
+                
+            case 'quarterly':
+                $this->start_date = $start->startOfQuarter()->format('Y-m-d');
+                $this->end_date = $start->copy()->endOfQuarter()->format('Y-m-d');
+                $quarter = ceil($start->month / 3);
+                $this->period_display = 'Q' . $quarter . ' ' . $start->year;
+                break;
+                
+            case 'yearly':
+                $this->start_date = $start->startOfYear()->format('Y-m-d');
+                $this->end_date = $start->copy()->endOfYear()->format('Y-m-d');
+                $this->period_display = $start->format('Y');
+                break;
+        }
+    }
+    
+    public function navigatePeriod($direction)
+    {
+        if (!$this->period || !$this->current_period_start) {
+            return;
+        }
+        
+        switch ($this->period) {
+            case 'weekly':
+                $this->current_period_start = $direction === 'next' 
+                    ? $this->current_period_start->addWeek()
+                    : $this->current_period_start->subWeek();
+                break;
+                
+            case 'monthly':
+                $this->current_period_start = $direction === 'next'
+                    ? $this->current_period_start->addMonth()
+                    : $this->current_period_start->subMonth();
+                break;
+                
+            case 'quarterly':
+                $this->current_period_start = $direction === 'next'
+                    ? $this->current_period_start->addQuarter()
+                    : $this->current_period_start->subQuarter();
+                break;
+                
+            case 'yearly':
+                $this->current_period_start = $direction === 'next'
+                    ? $this->current_period_start->addYear()
+                    : $this->current_period_start->subYear();
+                break;
+        }
+        
+        $this->updatePeriodDates();
+    }
+
+    protected function getActions(): array
+    {
+        return [
+            \Filament\Pages\Actions\Action::make('reset_dates')
+                ->label('Reset to Current Year')
+                ->icon('heroicon-o-refresh')
+                ->color('secondary')
+                ->action(function () {
+                    $this->resetDates();
+                })
         ];
     }
 
@@ -105,13 +226,31 @@ class Reports extends Page implements HasForms
             ->success()
             ->send();
     }
+    
+    public function resetDates()
+    {
+        // Reset all form-related properties
+        $this->period = null;
+        $this->period_display = '';
+        $this->current_period_start = null;
+        
+        // Reset dates to default values
+        $this->start_date = Carbon::now()->startOfYear()->format('Y-m-d');
+        $this->end_date = Carbon::now()->format('Y-m-d');
+        
+        Notification::make()
+            ->title('Dates Reset')
+            ->body('Period reset to manual selection and dates reset to January 1, ' . Carbon::now()->year . ' through today')
+            ->success()
+            ->send();
+    }
 
     public function getOccupancyReportData(): array
     {
         $startDate = Carbon::parse($this->start_date);
         $endDate = Carbon::parse($this->end_date);
         
-        return $this->reportsService->getOccupancyReport($this->period, $startDate, $endDate);
+        return $this->reportsService->getOccupancyReport($this->period ?? 'daily', $startDate, $endDate);
     }
 
     public function getFinancialReportData(): array
@@ -119,7 +258,7 @@ class Reports extends Page implements HasForms
         $startDate = Carbon::parse($this->start_date);
         $endDate = Carbon::parse($this->end_date);
         
-        return $this->reportsService->getFinancialReport($this->period, $startDate, $endDate);
+        return $this->reportsService->getFinancialReport($this->period ?? 'daily', $startDate, $endDate);
     }
 
     public function getMaintenanceReportData(): array
@@ -127,7 +266,7 @@ class Reports extends Page implements HasForms
         $startDate = Carbon::parse($this->start_date);
         $endDate = Carbon::parse($this->end_date);
         
-        return $this->reportsService->getMaintenanceReport($this->period, $startDate, $endDate);
+        return $this->reportsService->getMaintenanceReport($this->period ?? 'daily', $startDate, $endDate);
     }
 
     public function getDashboardSummaryData(): array

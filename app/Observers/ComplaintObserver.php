@@ -55,7 +55,7 @@ class ComplaintObserver
         switch ($complaint->status) {
             case 'investigating':
                 // Notify tenant and assigned staff that investigation has started
-                if ($tenant) {
+                if ($tenant && $tenant->role === 'tenant') {
                     $tenant->notify(new ComplaintInvestigationStartedNotification($complaint));
                 }
                 if ($assignedStaff) {
@@ -85,7 +85,7 @@ class ComplaintObserver
         $assignedStaff = $complaint->assignedTo;
 
         // Notify tenant about notes update
-        if ($tenant) {
+        if ($tenant && $tenant->role === 'tenant') {
             $tenant->notify(new ComplaintNotesUpdatedNotification($complaint));
         }
 

@@ -22,38 +22,74 @@ class ReportsService
         $endDate = $endDate ?? Carbon::now();
 
         $totalRooms = Room::count();
-        $currentOccupancy = Room::where('current_occupants', '>', 0)->count();
-        $occupancyRate = $totalRooms > 0 ? round(($currentOccupancy / $totalRooms) * 100, 2) : 0;
+        
+        // Get room assignments that were active during the specified period
+        $activeAssignments = RoomAssignment::where('start_date', '<=', $endDate)
+            ->where(function ($query) use ($startDate) {
+                $query->whereNull('end_date')
+                      ->orWhere('end_date', '>=', $startDate);
+            })
+            ->with('room')
+            ->get();
+            
+        $occupiedRooms = $activeAssignments->pluck('room_id')->unique()->count();
+        $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100, 2) : 0;
+        
+        // If no assignments exist in the date range, set everything to zero
+        if ($activeAssignments->isEmpty()) {
+            $occupiedRooms = 0;
+            $occupancyRate = 0;
+        }
 
         // Historical occupancy data
         $historicalData = $this->getHistoricalOccupancy($period, $startDate, $endDate);
 
-        // Room type breakdown
+        // Room type breakdown based on assignments in the date range
         $roomTypeBreakdown = Room::select('type')
             ->selectRaw('COUNT(*) as total')
-            ->selectRaw('SUM(CASE WHEN current_occupants > 0 THEN 1 ELSE 0 END) as occupied')
             ->groupBy('type')
             ->get()
-            ->map(function ($item) {
+            ->map(function ($item) use ($startDate, $endDate) {
+                // Count occupied rooms of this type within the date range
+                $occupiedCount = RoomAssignment::join('rooms', 'room_assignments.room_id', '=', 'rooms.id')
+                    ->where('rooms.type', $item->type)
+                    ->where('room_assignments.start_date', '<=', $endDate)
+                    ->where(function ($query) use ($startDate) {
+                        $query->whereNull('room_assignments.end_date')
+                              ->orWhere('room_assignments.end_date', '>=', $startDate);
+                    })
+                    ->distinct('room_assignments.room_id')
+                    ->count();
+                    
                 return [
                     'type' => $item->type,
                     'total' => $item->total,
-                    'occupied' => $item->occupied,
-                    'available' => $item->total - $item->occupied,
-                    'occupancy_rate' => $item->total > 0 ? round(($item->occupied / $item->total) * 100, 2) : 0
+                    'occupied' => $occupiedCount,
+                    'available' => $item->total - $occupiedCount,
+                    'occupancy_rate' => $item->total > 0 ? round(($occupiedCount / $item->total) * 100, 2) : 0
                 ];
             });
 
-        // Average occupancy duration
+        // Average occupancy duration for assignments within the date range
         $avgDuration = RoomAssignment::whereNotNull('end_date')
+            ->where('start_date', '<=', $endDate)
+            ->where('end_date', '>=', $startDate)
             ->selectRaw('AVG(DATEDIFF(end_date, start_date)) as avg_days')
             ->value('avg_days') ?? 0;
+            
+        // If no completed assignments in the date range, set to 0
+        if (RoomAssignment::whereNotNull('end_date')
+            ->where('start_date', '<=', $endDate)
+            ->where('end_date', '>=', $startDate)
+            ->count() === 0) {
+            $avgDuration = 0;
+        }
 
         return [
             'summary' => [
                 'total_rooms' => $totalRooms,
-                'current_occupancy' => $currentOccupancy,
-                'available_rooms' => $totalRooms - $currentOccupancy,
+                'current_occupancy' => $occupiedRooms,
+                'available_rooms' => $totalRooms - $occupiedRooms,
                 'occupancy_rate' => $occupancyRate,
                 'avg_duration_days' => round($avgDuration, 1)
             ],

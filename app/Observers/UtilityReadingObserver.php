@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\UtilityReading;
-use App\Models\User;
+use App\Models\Tenant;
 use App\Notifications\NewUtilityReadingNotification;
 
 class UtilityReadingObserver
@@ -18,9 +18,14 @@ class UtilityReadingObserver
         
         // Notify the tenant about the new utility reading
         if ($utilityReading->tenant_id) {
-            $tenant = User::find($utilityReading->tenant_id);
-            if ($tenant) {
-                $tenant->notify(new NewUtilityReadingNotification($utilityReading));
+            $tenant = Tenant::with('user')->find($utilityReading->tenant_id);
+            
+            if ($tenant && $tenant->user) {
+                // Only send notifications to users with 'tenant' role
+                // This prevents admins/staff from receiving tenant notifications
+                if ($tenant->user->role === 'tenant') {
+                    $tenant->user->notify(new NewUtilityReadingNotification($utilityReading));
+                }
             }
         }
     }

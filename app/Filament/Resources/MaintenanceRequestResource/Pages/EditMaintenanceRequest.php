@@ -30,9 +30,9 @@ class EditMaintenanceRequest extends EditRecord
                     ]);
                     
                     // Notify the tenant who made the request
-                    $tenant = User::find($this->record->tenant_id);
-                    if ($tenant) {
-                        $tenant->notify(new MaintenanceRequestNotification($this->record, 'completed'));
+                    $tenant = $this->record->tenant;
+                    if ($tenant && $tenant->user && $tenant->user->role === 'tenant') {
+                        $tenant->user->notify(new MaintenanceRequestNotification($this->record, 'completed'));
                     }
                     
                     $this->notify('success', 'Maintenance request marked as completed.');
@@ -48,10 +48,10 @@ class EditMaintenanceRequest extends EditRecord
         // Check if status was updated
         if ($maintenanceRequest->status !== $originalData['status']) {
             // Notify the tenant who made the request
-            $tenant = User::find($maintenanceRequest->tenant_id);
-            if ($tenant) {
+            $tenant = $maintenanceRequest->tenant;
+            if ($tenant && $tenant->user && $tenant->user->role === 'tenant') {
                 $notificationType = $maintenanceRequest->status === 'completed' ? 'completed' : 'update';
-                $tenant->notify(new MaintenanceRequestNotification($maintenanceRequest, $notificationType));
+                $tenant->user->notify(new MaintenanceRequestNotification($maintenanceRequest, $notificationType));
             }
             
             // Also notify admins if not completed
