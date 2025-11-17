@@ -38,7 +38,7 @@ class EditBill extends EditRecord
             
             // Also notify the tenant about their payment being processed
             $tenant = User::find($bill->tenant_id);
-            if ($tenant) {
+            if ($tenant && $tenant->role === 'tenant') {
                 $tenant->notify(new PaymentConfirmationNotification($bill, $paidAmount));
             }
         }

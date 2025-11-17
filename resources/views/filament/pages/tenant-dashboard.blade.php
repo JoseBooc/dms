@@ -168,7 +168,6 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Bills</h3>
-                    <a href="{{ url('/dashboard/tenant-bill-resources') }}" class="text-blue-600 hover:text-blue-500 dark:text-blue-400 text-sm font-medium">View All</a>
                 </div>
                 @if($recentBills->count() > 0)
                     <div class="space-y-3">
@@ -229,7 +228,6 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Utilities Billing</h3>
-                <a href="{{ url('/dashboard/utility-details') }}" class="text-blue-600 hover:text-blue-500 dark:text-blue-400 text-sm font-medium">View All</a>
             </div>
             
             @if($currentAssignment && $utilityReadings->count() > 0)

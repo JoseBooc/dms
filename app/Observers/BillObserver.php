@@ -158,7 +158,7 @@ class BillObserver
     protected function handlePenaltyCharge(Bill $bill): void
     {
         $tenant = User::find($bill->tenant_id);
-        if ($tenant) {
+        if ($tenant && $tenant->role === 'tenant') {
             $tenant->notify(new PenaltyChargeNotification($bill));
             
             Log::info('Penalty charge notification sent', [
@@ -175,7 +175,7 @@ class BillObserver
     protected function handleOverdueBill(Bill $bill): void
     {
         $tenant = User::find($bill->tenant_id);
-        if ($tenant) {
+        if ($tenant && $tenant->role === 'tenant') {
             $tenant->notify(new BillOverdueNotification($bill));
             
             Log::info('Overdue bill notification sent', [

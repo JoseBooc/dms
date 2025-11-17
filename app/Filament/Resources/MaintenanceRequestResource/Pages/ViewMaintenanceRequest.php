@@ -32,9 +32,9 @@ class ViewMaintenanceRequest extends ViewRecord
                     ]);
                     
                     // Notify the tenant who made the request
-                    $tenant = User::find($this->record->tenant_id);
-                    if ($tenant) {
-                        $tenant->notify(new MaintenanceRequestNotification($this->record, 'completed'));
+                    $tenant = $this->record->tenant;
+                    if ($tenant && $tenant->user && $tenant->user->role === 'tenant') {
+                        $tenant->user->notify(new MaintenanceRequestNotification($this->record, 'completed'));
                     }
                     
                     $this->notify('success', 'Maintenance request marked as completed.');
