@@ -59,9 +59,10 @@ class TenantAnalytics extends Page
             return;
         }
 
-        // Get current room assignment with room in single query
+        // Get current room assignment with room in single query (active, inactive, or pending)
         $this->currentAssignment = RoomAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'inactive', 'pending'])
+            ->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'inactive' THEN 2 WHEN status = 'pending' THEN 3 END")
             ->with('room')
             ->first();
 
@@ -85,8 +86,12 @@ class TenantAnalytics extends Page
     {
         $assignments = RoomAssignment::where('tenant_id', $tenant->id)->get();
         
-        $currentAssignment = $assignments->where('status', 'active')->first();
-        $completedAssignments = $assignments->where('status', 'completed');
+        $currentAssignment = $assignments->whereIn('status', ['active', 'inactive', 'pending'])
+            ->sortBy(function($assignment) {
+                $order = ['active' => 1, 'inactive' => 2, 'pending' => 3];
+                return $order[$assignment->status] ?? 4;
+            })->first();
+        $completedAssignments = $assignments->whereIn('status', ['terminated']);
         
         $totalStayDays = 0;
         $currentStayDays = 0;

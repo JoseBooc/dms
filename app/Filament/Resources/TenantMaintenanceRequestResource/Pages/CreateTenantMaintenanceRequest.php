@@ -36,56 +36,64 @@ class CreateTenantMaintenanceRequest extends CreateRecord
         $user = auth()->user();
         $tenant = $user->tenant;
         
-        if ($tenant) {
-            $data['tenant_id'] = $tenant->id;
+        if (!$tenant) {
+            throw ValidationException::withMessages([
+                'general' => ['No tenant profile found.'],
+            ]);
+        }
+        
+        $data['tenant_id'] = $tenant->id;
+        
+        // Get current room assignment - must be active
+        $currentAssignment = \App\Models\RoomAssignment::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->first();
             
-            // Get current room assignment
-            $currentAssignment = \App\Models\RoomAssignment::where('tenant_id', $tenant->id)
-                ->where('status', 'active')
-                ->first();
-                
-            if ($currentAssignment) {
-                $data['room_id'] = $currentAssignment->room_id;
+        if (!$currentAssignment) {
+            throw ValidationException::withMessages([
+                'general' => ['You cannot submit a maintenance request because you do not have an active room assignment. Please contact the administration if you believe this is an error.'],
+            ]);
+        }
+        
+        $data['room_id'] = $currentAssignment->room_id;
+
+        // Check for duplicate maintenance request in the last 24 hours
+        $duplicate = MaintenanceRequest::where('tenant_id', $tenant->id)
+            ->where('room_id', $data['room_id'])
+            ->where('area', $data['area'])
+            ->where('created_at', '>=', now()->subDay())
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->first();
+
+        if ($duplicate) {
+            // Log the duplicate attempt
+            if (class_exists('\App\Services\AuditLogService')) {
+                app(\App\Services\AuditLogService::class)->log(
+                    $duplicate,
+                    'duplicate_maintenance_request_prevented',
+                    null,
+                    [
+                        'attempted_by' => auth()->id(),
+                        'duplicate_of' => $duplicate->id,
+                        'area' => $data['area'],
+                        'room_id' => $data['room_id'],
+                    ],
+                    'Tenant attempted to create duplicate maintenance request within 24 hours'
+                );
             }
 
-            // Check for duplicate maintenance request in the last 24 hours
-            $duplicate = MaintenanceRequest::where('tenant_id', $tenant->id)
-                ->where('room_id', $data['room_id'])
-                ->where('area', $data['area'])
-                ->where('created_at', '>=', now()->subDay())
-                ->whereNotIn('status', ['completed', 'cancelled'])
-                ->first();
+            // Show error notification
+            Notification::make()
+                ->title('Duplicate Request Detected')
+                ->body('You have already submitted a maintenance request for this area today. Please wait for the existing request to be processed or contact the admin.')
+                ->danger()
+                ->persistent()
+                ->send();
 
-            if ($duplicate) {
-                // Log the duplicate attempt
-                if (class_exists('\App\Services\AuditLogService')) {
-                    app(\App\Services\AuditLogService::class)->log(
-                        $duplicate,
-                        'duplicate_maintenance_request_prevented',
-                        null,
-                        [
-                            'attempted_by' => auth()->id(),
-                            'duplicate_of' => $duplicate->id,
-                            'area' => $data['area'],
-                            'room_id' => $data['room_id'],
-                        ],
-                        'Tenant attempted to create duplicate maintenance request within 24 hours'
-                    );
-                }
-
-                // Show error notification
-                Notification::make()
-                    ->title('Duplicate Request Detected')
-                    ->body('You have already submitted a maintenance request for this area today. Please wait for the existing request to be processed or contact the admin.')
-                    ->danger()
-                    ->persistent()
-                    ->send();
-
-                // Throw validation exception to prevent creation
-                throw ValidationException::withMessages([
-                    'area' => 'You have already submitted a maintenance request for this area today.',
-                ]);
-            }
+            // Throw validation exception to prevent creation
+            throw ValidationException::withMessages([
+                'area' => 'You have already submitted a maintenance request for this area today.',
+            ]);
         }
         
         $data['status'] = 'pending';

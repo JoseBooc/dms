@@ -69,11 +69,47 @@ class TenantController extends Controller
 
     public function createMaintenanceRequest()
     {
+        $user = Auth::user();
+        $tenant = $user->tenant;
+        
+        if (!$tenant) {
+            return redirect()->route('tenant.dashboard')
+                ->with('error', 'No tenant profile found.');
+        }
+        
+        // Check if tenant has an active room assignment
+        $activeAssignment = $tenant->roomAssignments()
+            ->where('status', 'active')
+            ->exists();
+            
+        if (!$activeAssignment) {
+            return redirect()->route('tenant.dashboard')
+                ->with('error', 'You cannot submit a maintenance request because you do not have an active room assignment. Please contact the administration if you believe this is an error.');
+        }
+        
         return view('tenant.maintenance.create');
     }
 
     public function storeMaintenanceRequest(Request $request)
     {
+        $user = Auth::user();
+        $tenant = $user->tenant;
+        
+        if (!$tenant) {
+            return redirect()->route('tenant.dashboard')
+                ->with('error', 'No tenant profile found.');
+        }
+        
+        // Check if tenant has an active room assignment
+        $activeAssignment = $tenant->roomAssignments()
+            ->where('status', 'active')
+            ->first();
+            
+        if (!$activeAssignment) {
+            return redirect()->route('tenant.dashboard')
+                ->with('error', 'You cannot submit a maintenance request because you do not have an active room assignment. Please contact the administration if you believe this is an error.');
+        }
+
         $validated = $request->validate([
             'description' => 'required|string',
             'priority' => 'required|in:low,medium,high,urgent',
@@ -81,7 +117,8 @@ class TenantController extends Controller
         ]);
 
         MaintenanceRequest::create([
-            'tenant_id' => Auth::id(),
+            'tenant_id' => $user->id,
+            'room_id' => $activeAssignment->room_id,
             'description' => $validated['description'],
             'priority' => $validated['priority'],
             'area' => $validated['area'],
@@ -103,11 +140,47 @@ class TenantController extends Controller
 
     public function createComplaint()
     {
+        $user = Auth::user();
+        $tenant = $user->tenant;
+        
+        if (!$tenant) {
+            return redirect()->route('tenant.dashboard')
+                ->with('error', 'No tenant profile found.');
+        }
+        
+        // Check if tenant has an active room assignment
+        $activeAssignment = $tenant->roomAssignments()
+            ->where('status', 'active')
+            ->exists();
+            
+        if (!$activeAssignment) {
+            return redirect()->route('tenant.dashboard')
+                ->with('error', 'You cannot submit a complaint because you do not have an active room assignment. Please contact the administration if you believe this is an error.');
+        }
+        
         return view('tenant.complaints.create');
     }
 
     public function storeComplaint(Request $request)
     {
+        $user = Auth::user();
+        $tenant = $user->tenant;
+        
+        if (!$tenant) {
+            return redirect()->route('tenant.dashboard')
+                ->with('error', 'No tenant profile found.');
+        }
+        
+        // Check if tenant has an active room assignment
+        $activeAssignment = $tenant->roomAssignments()
+            ->where('status', 'active')
+            ->first();
+            
+        if (!$activeAssignment) {
+            return redirect()->route('tenant.dashboard')
+                ->with('error', 'You cannot submit a complaint because you do not have an active room assignment. Please contact the administration if you believe this is an error.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -115,7 +188,8 @@ class TenantController extends Controller
         ]);
 
         Complaint::create([
-            'tenant_id' => Auth::id(),
+            'tenant_id' => $user->id,
+            'room_id' => $activeAssignment->room_id,
             'title' => $validated['title'],
             'description' => $validated['description'],
             'category' => $validated['category'],
@@ -146,10 +220,11 @@ class TenantController extends Controller
             ]);
         }
         
-        // Get current room assignment
+        // Get current room assignment (active, inactive, or pending)
         $currentAssignment = RoomAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'inactive', 'pending'])
             ->with('room')
+            ->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'inactive' THEN 2 WHEN status = 'pending' THEN 3 END")
             ->first();
 
         if (!$currentAssignment) {
@@ -195,10 +270,11 @@ class TenantController extends Controller
             ]);
         }
         
-        // Get current room assignment
+        // Get current room assignment (active, inactive, or pending)
         $currentAssignment = RoomAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'inactive', 'pending'])
             ->with('room')
+            ->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'inactive' THEN 2 WHEN status = 'pending' THEN 3 END")
             ->first();
 
         if (!$currentAssignment) {
@@ -214,6 +290,10 @@ class TenantController extends Controller
 
         // Get latest utility readings for this room
         $utilityReadings = UtilityReading::where('room_id', $currentAssignment->room_id)
+            ->where(function ($query) use ($tenant) {
+                $query->where('tenant_id', $tenant->id) // Tenant-specific readings
+                      ->orWhereNull('tenant_id'); // Room-level readings (shared/split)
+            })
             ->with(['utilityType', 'recordedBy'])
             ->whereIn('utility_type_id', $utilityTypes->pluck('id'))
             ->orderBy('reading_date', 'desc')
@@ -243,10 +323,11 @@ class TenantController extends Controller
             ]);
         }
         
-        // Get current room assignment
+        // Get current room assignment (active, inactive, or pending)
         $currentAssignment = RoomAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'inactive', 'pending'])
             ->with('room')
+            ->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'inactive' THEN 2 WHEN status = 'pending' THEN 3 END")
             ->first();
 
         if (!$currentAssignment) {

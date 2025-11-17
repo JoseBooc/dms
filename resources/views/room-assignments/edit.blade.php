@@ -102,7 +102,7 @@
                             <div>
                                 <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                                 <select name="status" id="status" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm @error('status') border-red-300 @enderror" required>
-                                    @foreach(['pending', 'active', 'completed'] as $status)
+                                    @foreach(['pending', 'active', 'inactive', 'terminated'] as $status)
                                         <option value="{{ $status }}" 
                                                 {{ (old('status', $roomAssignment->status) == $status) ? 'selected' : '' }}>
                                             {{ ucfirst($status) }}

@@ -61,10 +61,11 @@ class MyRentInformation extends Page
             ];
         }
         
-        // Get active room assignment with relationships
+        // Get room assignment (active, inactive, or pending) with relationships
         $assignment = RoomAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'Active')
+            ->whereIn('status', ['active', 'inactive', 'pending'])
             ->with(['room', 'tenant'])
+            ->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'inactive' THEN 2 WHEN status = 'pending' THEN 3 END")
             ->first();
 
         if (!$assignment) {

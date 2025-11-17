@@ -93,7 +93,7 @@
             <div class="col-md-6 mb-3">
                 <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
                 <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
-                    @foreach(['pending', 'active', 'completed'] as $status)
+                    @foreach(['pending', 'active', 'inactive', 'terminated'] as $status)
                         <option value="{{ $status }}" 
                                 {{ (old('status', $roomAssignment->status) == $status) ? 'selected' : '' }}>
                             {{ ucfirst($status) }}
