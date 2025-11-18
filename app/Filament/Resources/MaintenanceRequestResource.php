@@ -173,7 +173,7 @@ class MaintenanceRequestResource extends Resource
                 Forms\Components\Section::make('Assignment & Status')
                     ->schema([
                         Forms\Components\Select::make('assigned_to')
-                            ->relationship('assignee', 'name', fn ($query) => $query->where('role', 'staff'))
+                            ->relationship('assignee', 'name', fn ($query) => $query->where('role', 'staff')->where('status', '!=', 'blocked'))
                             ->searchable()
                             ->placeholder('Assign to maintenance staff')
                             ->required(fn (callable $get) => $get('status') === 'in_progress')

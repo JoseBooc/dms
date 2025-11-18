@@ -187,7 +187,7 @@ class ComplaintResource extends Resource
                             
                         Forms\Components\Select::make('assigned_to')
                             ->label('Assigned To')
-                            ->options(User::whereIn('role', ['admin', 'staff'])->pluck('name', 'id'))
+                            ->options(User::whereIn('role', ['admin', 'staff'])->where('status', '!=', 'blocked')->pluck('name', 'id'))
                             ->searchable()
                             ->preload()
                             ->required(fn (callable $get) => $get('status') === 'investigating')
