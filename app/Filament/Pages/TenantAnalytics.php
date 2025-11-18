@@ -107,6 +107,9 @@ class TenantAnalytics extends Page
             $totalStayDays += $currentStayDays;
         }
         
+        // Get the first room assignment (earliest start date) for move-in date
+        $firstAssignment = $assignments->sortBy('start_date')->first();
+        
         return [
             'total_assignments' => $assignments->count(),
             'current_room' => $currentAssignment?->room?->room_number ?? 'None',
@@ -117,7 +120,7 @@ class TenantAnalytics extends Page
             'total_stay_days' => $totalStayDays,
             'total_stay_months' => round($totalStayDays / 30, 1),
             'total_stay_formatted' => $this->formatDuration($totalStayDays),
-            'start_date' => $currentAssignment?->start_date ? Carbon::parse($currentAssignment->start_date)->format('M d, Y') : 'N/A',
+            'start_date' => $firstAssignment?->start_date ? Carbon::parse($firstAssignment->start_date)->format('M d, Y') : 'N/A',
             'member_since' => $tenant->created_at->format('M d, Y'),
         ];
     }
@@ -225,6 +228,7 @@ class TenantAnalytics extends Page
                     'end_date' => $assignment->end_date ? Carbon::parse($assignment->end_date)->format('M d, Y') : 'Current',
                     'duration_days' => $duration,
                     'duration_months' => round($duration / 30, 1),
+                    'duration_formatted' => $this->formatDuration($duration),
                     'status' => $assignment->status,
                 ];
             })

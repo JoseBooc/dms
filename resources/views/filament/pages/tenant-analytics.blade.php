@@ -258,7 +258,7 @@
                                 {{ $history['end_date'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {{ $history['duration_months'] }} months
+                                {{ $history['duration_formatted'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
