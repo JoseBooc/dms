@@ -49,12 +49,12 @@ class TenantComplaintResource extends Resource
             return false;
         }
 
-        // Check if tenant has an active room assignment
-        $activeAssignment = \App\Models\RoomAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'active')
+        // Check if tenant has a room assignment
+        $hasAssignment = \App\Models\RoomAssignment::where('tenant_id', $tenant->id)
+            ->whereIn('status', ['active', 'pending', 'inactive'])
             ->exists();
 
-        return $activeAssignment;
+        return $hasAssignment;
     }
 
     public static function getEloquentQuery(): Builder
@@ -76,7 +76,7 @@ class TenantComplaintResource extends Resource
         
         if ($tenant) {
             $activeAssignment = \App\Models\RoomAssignment::where('tenant_id', $tenant->id)
-                ->where('status', 'active')
+                ->whereIn('status', ['active', 'pending', 'inactive'])
                 ->first();
         }
 
@@ -87,7 +87,7 @@ class TenantComplaintResource extends Resource
                     Forms\Components\Card::make()
                         ->schema([
                             Forms\Components\Placeholder::make('error_message')
-                                ->content('You cannot submit a complaint because you do not have an active room assignment. Please contact the administration if you believe this is an error.')
+                                ->content('You cannot submit a complaint because you do not have a room assignment. Please contact the administration if you believe this is an error.')
                                 ->columnSpanFull(),
                         ])
                         ->extraAttributes([

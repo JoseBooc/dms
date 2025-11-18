@@ -36,7 +36,7 @@ class RoomAssignmentController extends Controller
         // Get available rooms - rooms that are not in maintenance and haven't reached capacity
         $rooms = Room::where('status', '!=', 'maintenance')
             ->where('status', '!=', 'occupied')
-            ->whereRaw('(SELECT COUNT(*) FROM room_assignments WHERE room_assignments.room_id = rooms.id AND room_assignments.status = "active") < rooms.capacity');
+            ->whereRaw('(SELECT COUNT(*) FROM room_assignments WHERE room_assignments.room_id = rooms.id AND room_assignments.status IN ("active", "pending", "inactive")) < rooms.capacity');
 
         // If room_id is provided, ensure that room is included regardless of status
         if ($request->has('room_id')) {
@@ -47,7 +47,7 @@ class RoomAssignmentController extends Controller
 
         // Get tenants who don't have active assignments
         $tenants = Tenant::with('user')->whereDoesntHave('roomAssignments', function($query) {
-            $query->where('status', 'active');
+            $query->whereIn('status', ['active', 'pending', 'inactive']);
         })->orderBy('first_name')->get();
         
         // Get the selected room for pre-filling if provided
@@ -75,7 +75,7 @@ class RoomAssignmentController extends Controller
             
             // Check current occupancy vs capacity
             $currentAssignments = RoomAssignment::where('room_id', $validated['room_id'])
-                ->where('status', 'active')
+                ->whereIn('status', ['active', 'pending', 'inactive'])
                 ->count();
 
             if ($currentAssignments >= $room->capacity) {
@@ -84,11 +84,11 @@ class RoomAssignmentController extends Controller
 
             // Check if tenant already has an active assignment
             $hasTenantAssignment = RoomAssignment::where('tenant_id', $validated['tenant_id'])
-                ->where('status', 'active')
+                ->whereIn('status', ['active', 'pending', 'inactive'])
                 ->exists();
 
             if ($hasTenantAssignment) {
-                return back()->withErrors(['tenant_id' => 'Tenant already has an active room assignment.'])->withInput();
+                return back()->withErrors(['tenant_id' => 'Tenant already has a room assignment.'])->withInput();
             }
 
             // Create assignment with initial active status
@@ -160,25 +160,26 @@ class RoomAssignmentController extends Controller
 
             // If changing room, check if new room is available
             if ($roomAssignment->room_id !== $validated['room_id']) {
-                $isNewRoomAvailable = !RoomAssignment::where('room_id', $validated['room_id'])
-                    ->where('status', 'active')
+                $roomOccupancy = RoomAssignment::where('room_id', $validated['room_id'])
+                    ->whereIn('status', ['active', 'pending', 'inactive'])
                     ->where('id', '!=', $roomAssignment->id)
-                    ->exists();
+                    ->count();
 
-                if (!$isNewRoomAvailable) {
-                    return back()->withErrors(['room_id' => 'Selected room is currently occupied.'])->withInput();
+                $newRoom = Room::find($validated['room_id']);
+                if ($roomOccupancy >= $newRoom->capacity) {
+                    return back()->withErrors(['room_id' => 'Selected room has reached maximum capacity.'])->withInput();
                 }
             }
 
             // If changing tenant, check if new tenant has active assignment
             if ($roomAssignment->tenant_id !== $validated['tenant_id']) {
                 $hasNewTenantAssignment = RoomAssignment::where('tenant_id', $validated['tenant_id'])
-                    ->where('status', 'active')
+                    ->whereIn('status', ['active', 'pending', 'inactive'])
                     ->where('id', '!=', $roomAssignment->id)
                     ->exists();
 
                 if ($hasNewTenantAssignment) {
-                    return back()->withErrors(['tenant_id' => 'Selected tenant already has an active assignment.'])->withInput();
+                    return back()->withErrors(['tenant_id' => 'Selected tenant already has a room assignment.'])->withInput();
                 }
             }
 
