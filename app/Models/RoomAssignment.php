@@ -30,9 +30,9 @@ class RoomAssignment extends Model
      */
     protected static function booted(): void
     {
-        // When a room assignment is created or status changes to active
+        // When a room assignment is created, update occupancy for all non-terminated statuses
         static::created(function (RoomAssignment $assignment) {
-            if ($assignment->status === 'active') {
+            if (in_array($assignment->status, ['active', 'pending', 'inactive'])) {
                 static::updateRoomOccupancy($assignment->room_id);
             }
         });
@@ -68,18 +68,18 @@ class RoomAssignment extends Model
         $room = Room::find($roomId);
         if (!$room) return;
 
-        // Count active assignments for this room
-        $activeCount = static::where('room_id', $roomId)
-            ->where('status', 'active')
+        // Count all non-terminated assignments for this room (active, pending, inactive)
+        $occupiedCount = static::where('room_id', $roomId)
+            ->whereIn('status', ['active', 'pending', 'inactive'])
             ->count();
 
         // Update current occupants
-        $room->current_occupants = $activeCount;
+        $room->current_occupants = $occupiedCount;
 
         // Update room status based on occupancy
-        if ($activeCount >= $room->capacity) {
+        if ($occupiedCount >= $room->capacity) {
             $room->status = 'occupied';
-        } elseif ($activeCount > 0) {
+        } elseif ($occupiedCount > 0) {
             $room->status = 'available'; // Partially occupied but still available
         } else {
             $room->status = 'available'; // Empty room

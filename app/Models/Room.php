@@ -91,7 +91,7 @@ class Room extends Model
 
     public function currentAssignments()
     {
-        return $this->hasMany(RoomAssignment::class)->where('status', 'active');
+        return $this->hasMany(RoomAssignment::class)->whereIn('status', ['active', 'pending', 'inactive']);
     }
 
     public function bills()
@@ -109,14 +109,14 @@ class Room extends Model
      */
     public function updateOccupancy()
     {
-        $activeAssignments = $this->assignments()->where('status', 'active')->count();
+        $occupiedAssignments = $this->assignments()->whereIn('status', ['active', 'pending', 'inactive'])->count();
         
-        $this->current_occupants = $activeAssignments;
+        $this->current_occupants = $occupiedAssignments;
         
         // Update status based on capacity
-        if ($activeAssignments >= $this->capacity) {
+        if ($occupiedAssignments >= $this->capacity) {
             $this->status = 'occupied';
-        } elseif ($activeAssignments > 0) {
+        } elseif ($occupiedAssignments > 0) {
             $this->status = 'available'; // Partially occupied but still available
         } else {
             $this->status = 'available'; // Empty room

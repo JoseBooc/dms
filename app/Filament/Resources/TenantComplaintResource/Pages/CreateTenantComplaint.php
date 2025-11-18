@@ -38,10 +38,10 @@ class CreateTenantComplaint extends CreateRecord
             ]);
         }
         
-        $roomAssignment = $tenant->roomAssignments()->where('status', 'active')->first();
+        $roomAssignment = $tenant->roomAssignments()->whereIn('status', ['active', 'pending', 'inactive'])->first();
         if (!$roomAssignment) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'general' => ['You cannot submit a complaint because you do not have an active room assignment. Please contact the administration if you believe this is an error.'],
+                'general' => ['You cannot submit a complaint because you do not have a room assignment. Please contact the administration if you believe this is an error.'],
             ]);
         }
         
