@@ -26,14 +26,21 @@ class Deposit extends Model
         'notes',
         'collected_by',
         'refunded_by',
+        'refunded_amount',
+        'refund_method',
+        'reference_number',
+        'refund_notes',
+        'refunded_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'deductions_total' => 'decimal:2',
         'refundable_amount' => 'decimal:2',
+        'refunded_amount' => 'decimal:2',
         'collected_date' => 'date',
         'refund_date' => 'date',
+        'refunded_at' => 'datetime',
     ];
 
     // Boot method to enforce business logic on create/update

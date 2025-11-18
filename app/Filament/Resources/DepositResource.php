@@ -363,9 +363,13 @@ class DepositResource extends Resource
                             // Process refund through service
                             $deposit = $depositService->processRefund(
                                 $record,
-                                $data['refund_method'] ?? 'cash',
-                                $data['reference_number'] ?? null,
-                                $data['refund_notes'] ?? null
+                                [
+                                    'refund_amount' => $refundAmount,
+                                    'refund_method' => $data['refund_method'] ?? 'cash',
+                                    'reference_number' => $data['reference_number'] ?? null,
+                                    'refund_notes' => $data['refund_notes'] ?? null,
+                                    'refund_date' => now()
+                                ]
                             );
 
                             // Log financial transaction

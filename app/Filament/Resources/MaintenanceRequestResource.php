@@ -54,9 +54,16 @@ class MaintenanceRequestResource extends Resource
                 Forms\Components\Section::make('Request Information')
                     ->schema([
                         Forms\Components\Select::make('tenant_id')
-                            ->relationship('tenant', 'first_name')
-                            ->required()
+                            ->label('Tenant')
+                            ->options(function () {
+                                return \App\Models\Tenant::whereHas('user', function($query) {
+                                    $query->where('status', '!=', 'blocked');
+                                })->with('user')->get()->mapWithKeys(function($tenant) {
+                                    return [$tenant->id => $tenant->first_name . ' ' . $tenant->last_name . ' (' . $tenant->user->email . ')'];
+                                });
+                            })
                             ->searchable()
+                            ->required()
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                 if (!$state) {
