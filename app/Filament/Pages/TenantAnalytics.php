@@ -59,9 +59,10 @@ class TenantAnalytics extends Page
             return;
         }
 
-        // Get current room assignment with room in single query
+        // Get current room assignment with room in single query (active, inactive, or pending)
         $this->currentAssignment = RoomAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'inactive', 'pending'])
+            ->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'inactive' THEN 2 WHEN status = 'pending' THEN 3 END")
             ->with('room')
             ->first();
 
@@ -85,8 +86,12 @@ class TenantAnalytics extends Page
     {
         $assignments = RoomAssignment::where('tenant_id', $tenant->id)->get();
         
-        $currentAssignment = $assignments->where('status', 'active')->first();
-        $completedAssignments = $assignments->where('status', 'completed');
+        $currentAssignment = $assignments->whereIn('status', ['active', 'inactive', 'pending'])
+            ->sortBy(function($assignment) {
+                $order = ['active' => 1, 'inactive' => 2, 'pending' => 3];
+                return $order[$assignment->status] ?? 4;
+            })->first();
+        $completedAssignments = $assignments->whereIn('status', ['terminated']);
         
         $totalStayDays = 0;
         $currentStayDays = 0;
@@ -102,6 +107,9 @@ class TenantAnalytics extends Page
             $totalStayDays += $currentStayDays;
         }
         
+        // Get the first room assignment (earliest start date) for move-in date
+        $firstAssignment = $assignments->sortBy('start_date')->first();
+        
         return [
             'total_assignments' => $assignments->count(),
             'current_room' => $currentAssignment?->room?->room_number ?? 'None',
@@ -112,7 +120,7 @@ class TenantAnalytics extends Page
             'total_stay_days' => $totalStayDays,
             'total_stay_months' => round($totalStayDays / 30, 1),
             'total_stay_formatted' => $this->formatDuration($totalStayDays),
-            'start_date' => $currentAssignment?->start_date ? Carbon::parse($currentAssignment->start_date)->format('M d, Y') : 'N/A',
+            'start_date' => $firstAssignment?->start_date ? Carbon::parse($firstAssignment->start_date)->format('M d, Y') : 'N/A',
             'member_since' => $tenant->created_at->format('M d, Y'),
         ];
     }
@@ -220,6 +228,7 @@ class TenantAnalytics extends Page
                     'end_date' => $assignment->end_date ? Carbon::parse($assignment->end_date)->format('M d, Y') : 'Current',
                     'duration_days' => $duration,
                     'duration_months' => round($duration / 30, 1),
+                    'duration_formatted' => $this->formatDuration($duration),
                     'status' => $assignment->status,
                 ];
             })

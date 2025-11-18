@@ -66,6 +66,7 @@ class BillResource extends Resource
                                 // Show ALL users with tenant role and their room assignment status
                                 // Must properly join through Tenant model to RoomAssignment
                                 return User::where('role', 'tenant')
+                                    ->where('status', '!=', 'blocked')
                                     ->with(['tenant.assignments' => function ($query) {
                                         $query->where('status', 'active')->with('room');
                                     }])

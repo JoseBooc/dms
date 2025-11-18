@@ -62,6 +62,9 @@ class UtilityReadingResource extends Resource
                         return \App\Models\Tenant::whereHas('assignments', function ($query) {
                             $query->where('status', 'active');
                         })
+                        ->whereHas('user', function ($query) {
+                            $query->where('status', '!=', 'blocked');
+                        })
                         ->with('user:id,first_name,last_name')
                         ->get()
                         ->mapWithKeys(function ($tenant) {

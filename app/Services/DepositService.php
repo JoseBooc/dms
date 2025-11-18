@@ -130,10 +130,10 @@ class DepositService
      *
      * @param Deposit $deposit
      * @param array $refundData
-     * @return bool
+     * @return Deposit
      * @throws \Exception
      */
-    public function processRefund(Deposit $deposit, array $refundData): bool
+    public function processRefund(Deposit $deposit, array $refundData): Deposit
     {
         return DB::transaction(function () use ($deposit, $refundData) {
             // Validate refund amount
@@ -143,12 +143,17 @@ class DepositService
 
             // Update deposit status
             if ($refundData['refund_amount'] >= $deposit->refundable_amount) {
-                $deposit->status = 'fully_refunded';
+                $deposit->status = 'refunded';
             } else {
-                $deposit->status = 'partially_refunded';
+                $deposit->status = 'deducted';
             }
 
-            $deposit->refund_date = $refundData['refund_date'] ?? now();
+            $deposit->refunded_amount = ($deposit->refunded_amount ?? 0) + $refundData['refund_amount'];
+            $deposit->refund_method = $refundData['refund_method'] ?? 'cash';
+            $deposit->reference_number = $refundData['reference_number'] ?? null;
+            $deposit->refund_notes = $refundData['refund_notes'] ?? null;
+            $deposit->refunded_at = $refundData['refund_date'] ?? now();
+            $deposit->refund_date = ($refundData['refund_date'] ?? now())->toDateString();
             $deposit->save();
 
             Log::info('Deposit refund processed', [
@@ -157,7 +162,7 @@ class DepositService
                 'status' => $deposit->status,
             ]);
 
-            return true;
+            return $deposit;
         });
     }
 

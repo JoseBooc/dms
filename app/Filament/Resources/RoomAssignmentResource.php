@@ -45,6 +45,9 @@ class RoomAssignmentResource extends Resource
                             ->required()
                             ->getSearchResultsUsing(function (string $search) {
                                 return \App\Models\Tenant::query()
+                                    ->whereHas('user', function ($query) {
+                                        $query->where('status', '!=', 'blocked');
+                                    })
                                     ->where(function ($query) use ($search) {
                                         $query->where('last_name', 'like', "%{$search}%")
                                             ->orWhere('first_name', 'like', "%{$search}%")
@@ -116,10 +119,10 @@ class RoomAssignmentResource extends Resource
                         
                         Forms\Components\Select::make('status')
                             ->options([
-                                'active' => 'Active',
+                                'pending' => 'Pending',
+                                'active' => 'Active', 
                                 'inactive' => 'Inactive',
                                 'terminated' => 'Terminated',
-                                'pending' => 'Pending',
                             ])
                             ->required()
                             ->default('pending'),
@@ -180,10 +183,10 @@ class RoomAssignmentResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'active' => 'Active',
-                        'inactive' => 'Inactive',
-                        'terminated' => 'Terminated',
                         'pending' => 'Pending',
+                        'active' => 'Active',
+                        'inactive' => 'Inactive', 
+                        'terminated' => 'Terminated',
                     ]),
             ])
             ->defaultSort('created_at', 'desc')

@@ -37,6 +37,26 @@ class TenantMaintenanceRequestResource extends Resource
         return Auth::user()?->role === 'tenant';
     }
 
+    public static function canCreate(): bool
+    {
+        $user = Auth::user();
+        if (!$user || $user->role !== 'tenant') {
+            return false;
+        }
+
+        $tenant = $user->tenant;
+        if (!$tenant) {
+            return false;
+        }
+
+        // Check if tenant has an active room assignment
+        $activeAssignment = RoomAssignment::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->exists();
+
+        return $activeAssignment;
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
@@ -60,6 +80,22 @@ class TenantMaintenanceRequestResource extends Resource
                 ->where('status', 'active')
                 ->with('room')
                 ->first();
+        }
+
+        // If no active assignment, show error message
+        if (!$currentAssignment) {
+            return $form
+                ->schema([
+                    Forms\Components\Card::make()
+                        ->schema([
+                            Forms\Components\Placeholder::make('error_message')
+                                ->content('You cannot submit a maintenance request because you do not have an active room assignment. Please contact the administration if you believe this is an error.')
+                                ->columnSpanFull(),
+                        ])
+                        ->extraAttributes([
+                            'class' => 'bg-red-50 border border-red-200 text-red-800'
+                        ]),
+                ]);
         }
 
         return $form

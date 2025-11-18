@@ -55,6 +55,19 @@
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Room</p>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ $tenancyStats['current_room'] ?? 'None' }}</p>
                     <p class="text-xs text-gray-400 dark:text-gray-500">{{ $tenancyStats['current_status'] ?? 'No assignment' }}</p>
+                    @if(isset($tenancyStats['current_status']) && in_array($tenancyStats['current_status'], ['inactive', 'pending']))
+                    <div class="mt-2">
+                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full
+                            @if($tenancyStats['current_status'] === 'pending')
+                                bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300
+                            @else
+                                bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300
+                            @endif
+                        ">
+                            {{ ucfirst($tenancyStats['current_status']) }} Assignment
+                        </span>
+                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -213,7 +226,7 @@
 
         <!-- Room History -->
         @if(!empty($tenancyHistory))
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-full">
             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                 <svg class="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
@@ -221,8 +234,8 @@
                 Room Assignment History
             </h3>
             
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full table-auto divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Room</th>
@@ -245,11 +258,22 @@
                                 {{ $history['end_date'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {{ $history['duration_months'] }} months
+                                {{ $history['duration_formatted'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                    {{ $history['status'] === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
+                                    @if($history['status'] === 'active')
+                                        bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
+                                    @elseif($history['status'] === 'pending')
+                                        bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300
+                                    @elseif($history['status'] === 'inactive')
+                                        bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300
+                                    @elseif($history['status'] === 'terminated')
+                                        bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300
+                                    @else
+                                        bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
+                                    @endif
+                                ">
                                     {{ ucfirst($history['status']) }}
                                 </span>
                             </td>

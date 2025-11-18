@@ -57,6 +57,7 @@ class DepositResource extends Resource
                                     ->label('Tenant')
                                     ->options(function () {
                                         return User::where('role', 'tenant')
+                                            ->where('status', '!=', 'blocked')
                                             ->get()
                                             ->mapWithKeys(fn($user) => [$user->id => $user->first_name . ' ' . $user->last_name . ' (' . $user->email . ')']);
                                     })
@@ -166,8 +167,8 @@ class DepositResource extends Resource
                                     ->label('Status')
                                     ->options([
                                         'active' => 'Active',
-                                        'partially_refunded' => 'Partially Refunded',
-                                        'fully_refunded' => 'Fully Refunded',
+                                        'deducted' => 'Deducted',
+                                        'refunded' => 'Refunded',
                                         'forfeited' => 'Forfeited',
                                     ])
                                     ->default('active')
@@ -235,10 +236,11 @@ class DepositResource extends Resource
                     ->label('Status')
                     ->colors([
                         'success' => 'active',
-                        'warning' => 'partially_refunded',
-                        'secondary' => 'fully_refunded',
+                        'warning' => 'deducted',
+                        'secondary' => 'refunded',
                         'danger' => 'forfeited',
-                    ]),
+                    ])
+                    ->formatStateUsing(fn (string $state): string => str_replace('_', ' ', $state)),
 
                 Tables\Columns\TextColumn::make('collected_date')
                     ->label('Collected')
@@ -322,7 +324,7 @@ class DepositResource extends Resource
                     ->label('Process Refund')
                     ->icon('heroicon-o-cash')
                     ->color('success')
-                    ->visible(fn (Deposit $record) => $record->refundable_amount > 0 && in_array($record->status, ['active', 'partially_refunded']))
+                    ->visible(fn (Deposit $record) => $record->refundable_amount > 0 && in_array($record->status, ['active', 'deducted']))
                     ->authorize('refund')
                     ->requiresConfirmation()
                     ->modalHeading('Process Deposit Refund')
@@ -362,9 +364,13 @@ class DepositResource extends Resource
                             // Process refund through service
                             $deposit = $depositService->processRefund(
                                 $record,
-                                $data['refund_method'] ?? 'cash',
-                                $data['reference_number'] ?? null,
-                                $data['refund_notes'] ?? null
+                                [
+                                    'refund_amount' => $refundAmount,
+                                    'refund_method' => $data['refund_method'] ?? 'cash',
+                                    'reference_number' => $data['reference_number'] ?? null,
+                                    'refund_notes' => $data['refund_notes'] ?? null,
+                                    'refund_date' => now()
+                                ]
                             );
 
                             // Log financial transaction

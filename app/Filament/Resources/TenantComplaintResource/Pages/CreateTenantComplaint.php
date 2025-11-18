@@ -22,18 +22,30 @@ class CreateTenantComplaint extends CreateRecord
     {
         $user = Auth::user();
         
-        if ($user && $user->role === 'tenant') {
-            $data['tenant_id'] = $user->id;
-            
-            // Get tenant's room assignment
-            $tenant = $user->tenant;
-            if ($tenant) {
-                $roomAssignment = $tenant->roomAssignments()->where('status', 'active')->first();
-                if ($roomAssignment) {
-                    $data['room_id'] = $roomAssignment->room_id;
-                }
-            }
+        if (!$user || $user->role !== 'tenant') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'general' => ['Invalid user access.'],
+            ]);
         }
+        
+        $data['tenant_id'] = $user->id;
+        
+        // Get tenant's room assignment - must be active
+        $tenant = $user->tenant;
+        if (!$tenant) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'general' => ['No tenant profile found.'],
+            ]);
+        }
+        
+        $roomAssignment = $tenant->roomAssignments()->where('status', 'active')->first();
+        if (!$roomAssignment) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'general' => ['You cannot submit a complaint because you do not have an active room assignment. Please contact the administration if you believe this is an error.'],
+            ]);
+        }
+        
+        $data['room_id'] = $roomAssignment->room_id;
         
         return $data;
     }

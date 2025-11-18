@@ -99,10 +99,11 @@ class TenantDashboard extends Page
             ];
         }
 
-        // Get current room assignment
+        // Get current room assignment (active, inactive, or pending)
         $currentAssignment = RoomAssignment::where('tenant_id', $tenant->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'inactive', 'pending'])
             ->with('room')
+            ->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'inactive' THEN 2 WHEN status = 'pending' THEN 3 END")
             ->first();
 
         // Get recent bills (bills reference user_id, not tenant_id)
@@ -122,13 +123,15 @@ class TenantDashboard extends Page
         $utilityReadings = collect();
         if ($currentAssignment && $currentAssignment->room_id) {
             $utilityReadings = UtilityReading::where('room_id', $currentAssignment->room_id)
-                ->where('tenant_id', $tenant->id)
+                ->where(function ($query) use ($tenant) {
+                    $query->where('tenant_id', $tenant->id) // Tenant-specific readings
+                          ->orWhereNull('tenant_id'); // Room-level readings (shared/split)
+                })
                 ->whereHas('utilityType') // Only include readings with valid utility types
                 ->with(['utilityType', 'room'])
                 ->orderBy('reading_date', 'desc')
                 ->take(10)
-                ->get()
-                ->groupBy('reading_date');
+                ->get();
         }
 
         // Calculate stats (bills use user_id, maintenance uses tenant_id)
