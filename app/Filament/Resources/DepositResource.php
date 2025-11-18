@@ -239,7 +239,8 @@ class DepositResource extends Resource
                         'warning' => 'partially_refunded',
                         'secondary' => 'fully_refunded',
                         'danger' => 'forfeited',
-                    ]),
+                    ])
+                    ->formatStateUsing(fn (string $state): string => str_replace('_', ' ', $state)),
 
                 Tables\Columns\TextColumn::make('collected_date')
                     ->label('Collected')
