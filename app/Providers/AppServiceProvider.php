@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Filament\Facades\Filament;
+use Filament\Navigation\UserMenuItem;
 use Livewire\Livewire;
 use App\Http\Livewire\NotificationDropdown;
 use App\Models\Bill;
@@ -49,6 +50,14 @@ class AppServiceProvider extends ServiceProvider
                 'global-search.end',
                 fn (): string => '<div class="ml-4">' . \Livewire\Livewire::mount('notification-dropdown')->html() . '</div>'
             );
+            
+            // Register user menu items
+            Filament::registerUserMenuItems([
+                'change-password' => UserMenuItem::make()
+                    ->label('Change Password')
+                    ->url('/dashboard/change-password')
+                    ->icon('heroicon-s-key'),
+            ]);
         });
     }
 }

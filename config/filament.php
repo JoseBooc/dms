@@ -108,6 +108,7 @@ return [
         'register' => [
             // Pages\Dashboard::class, // Removed to prevent duplicate
             \App\Filament\Pages\MyRentInformation::class,
+            \App\Filament\Pages\ChangePassword::class,
         ],
     ],
 
