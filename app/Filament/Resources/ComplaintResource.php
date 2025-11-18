@@ -52,7 +52,7 @@ class ComplaintResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('tenant_id')
                             ->label('Tenant')
-                            ->options(User::where('role', 'tenant')->pluck('name', 'id'))
+                            ->options(User::where('role', 'tenant')->where('status', '!=', 'blocked')->pluck('name', 'id'))
                             ->required()
                             ->searchable()
                             ->preload()

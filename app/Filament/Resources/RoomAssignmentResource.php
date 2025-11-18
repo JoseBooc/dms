@@ -45,6 +45,9 @@ class RoomAssignmentResource extends Resource
                             ->required()
                             ->getSearchResultsUsing(function (string $search) {
                                 return \App\Models\Tenant::query()
+                                    ->whereHas('user', function ($query) {
+                                        $query->where('status', '!=', 'blocked');
+                                    })
                                     ->where(function ($query) use ($search) {
                                         $query->where('last_name', 'like', "%{$search}%")
                                             ->orWhere('first_name', 'like', "%{$search}%")
