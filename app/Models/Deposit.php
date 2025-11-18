@@ -171,7 +171,7 @@ class Deposit extends Model
         if ($refundable <= 0) {
             $this->status = 'forfeited';
         } elseif ($this->deductions_total > 0 && $refundable < $this->amount) {
-            $this->status = 'partially_refunded';
+            $this->status = 'deducted';
         } else {
             $this->status = 'active';
         }
@@ -181,7 +181,7 @@ class Deposit extends Model
 
     public function canBeRefunded(): bool
     {
-        return in_array($this->status, ['active', 'partially_refunded']) && $this->refundable_amount > 0;
+        return in_array($this->status, ['active', 'deducted']) && $this->refundable_amount > 0;
     }
 
     public function processRefund(?string $notes = null): void
@@ -190,7 +190,7 @@ class Deposit extends Model
             throw new \Exception('Deposit cannot be refunded');
         }
 
-        $this->status = 'fully_refunded';
+        $this->status = 'refunded';
         $this->refund_date = now()->toDateString();
         $this->refunded_by = auth()->id() ?? 1; // Fallback to admin user ID
         

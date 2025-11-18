@@ -167,8 +167,8 @@ class DepositResource extends Resource
                                     ->label('Status')
                                     ->options([
                                         'active' => 'Active',
-                                        'partially_refunded' => 'Partially Refunded',
-                                        'fully_refunded' => 'Fully Refunded',
+                                        'deducted' => 'Deducted',
+                                        'refunded' => 'Refunded',
                                         'forfeited' => 'Forfeited',
                                     ])
                                     ->default('active')
@@ -236,8 +236,8 @@ class DepositResource extends Resource
                     ->label('Status')
                     ->colors([
                         'success' => 'active',
-                        'warning' => 'partially_refunded',
-                        'secondary' => 'fully_refunded',
+                        'warning' => 'deducted',
+                        'secondary' => 'refunded',
                         'danger' => 'forfeited',
                     ])
                     ->formatStateUsing(fn (string $state): string => str_replace('_', ' ', $state)),
@@ -324,7 +324,7 @@ class DepositResource extends Resource
                     ->label('Process Refund')
                     ->icon('heroicon-o-cash')
                     ->color('success')
-                    ->visible(fn (Deposit $record) => $record->refundable_amount > 0 && in_array($record->status, ['active', 'partially_refunded']))
+                    ->visible(fn (Deposit $record) => $record->refundable_amount > 0 && in_array($record->status, ['active', 'deducted']))
                     ->authorize('refund')
                     ->requiresConfirmation()
                     ->modalHeading('Process Deposit Refund')
