@@ -69,11 +69,6 @@ class UtilityReadingResource extends Resource
                         ->get()
                         ->mapWithKeys(function ($tenant) {
                             $name = trim($tenant->user->first_name . ' ' . $tenant->user->last_name);
-                            // Get their active room assignment
-                            $activeAssignment = $tenant->assignments()->where('status', 'active')->with('room')->first();
-                            if ($activeAssignment && $activeAssignment->room) {
-                                $name .= ' (' . $activeAssignment->room->room_number . ')';
-                            }
                             return [$tenant->id => $name];
                         });
                     })

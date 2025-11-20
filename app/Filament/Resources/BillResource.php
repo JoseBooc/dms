@@ -63,23 +63,11 @@ class BillResource extends Resource
                         Forms\Components\Select::make('tenant_id')
                             ->label('Tenant')
                             ->options(function () {
-                                // Show ALL users with tenant role and their room assignment status
-                                // Must properly join through Tenant model to RoomAssignment
                                 return User::where('role', 'tenant')
                                     ->where('status', '!=', 'blocked')
-                                    ->with(['tenant.assignments' => function ($query) {
-                                        $query->where('status', 'active')->with('room');
-                                    }])
                                     ->get()
                                     ->mapWithKeys(function ($user) {
-                                        // Get tenant profile and active assignment
-                                        $tenantProfile = $user->tenant;
-                                        $activeAssignment = $tenantProfile ? $tenantProfile->assignments->first() : null;
-                                        
-                                        $roomInfo = $activeAssignment && $activeAssignment->room 
-                                            ? ' (' . $activeAssignment->room->room_number . ')' 
-                                            : ' (Unassigned)';
-                                        return [$user->id => $user->name . $roomInfo];
+                                        return [$user->id => $user->name];
                                     });
                             })
                             ->required()
@@ -459,6 +447,34 @@ class BillResource extends Resource
                         'partially_paid' => 'Partially Paid',
                         'paid' => 'Paid',
                     ]),
+                Tables\Filters\SelectFilter::make('created_year')
+                    ->label('Created Year')
+                    ->options(function () {
+                        $years = [];
+                        $startYear = 2020; // Adjust based on your data
+                        $currentYear = now()->year;
+                        for ($year = $currentYear; $year >= $startYear; $year--) {
+                            $years[$year] = $year;
+                        }
+                        return $years;
+                    })
+                    ->query(function (Builder $query, array $data): Builder {
+                        return isset($data['value']) 
+                            ? $query->whereYear('created_at', $data['value'])
+                            : $query;
+                    }),
+                Tables\Filters\SelectFilter::make('created_month')
+                    ->label('Created Month')
+                    ->options([
+                        1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                        5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                        9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return isset($data['value']) 
+                            ? $query->whereMonth('created_at', $data['value'])
+                            : $query;
+                    }),
             ])
             ->actions([
                 Tables\Actions\Action::make('record_payment')
