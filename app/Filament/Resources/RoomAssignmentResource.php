@@ -56,12 +56,12 @@ class RoomAssignmentResource extends Resource
                                     ->limit(10)
                                     ->get()
                                     ->mapWithKeys(function ($tenant) {
-                                        return [$tenant->id => "{$tenant->last_name}, {$tenant->first_name} – TID{$tenant->id}"];
+                                        return [$tenant->id => "{$tenant->first_name} {$tenant->last_name}"];
                                     });
                             })
                             ->getOptionLabelUsing(function ($value) {
                                 $tenant = \App\Models\Tenant::find($value);
-                                return $tenant ? "{$tenant->last_name}, {$tenant->first_name} – TID{$tenant->id}" : '';
+                                return $tenant ? "{$tenant->first_name} {$tenant->last_name}" : '';
                             })
                             ->helperText('Start typing tenant\'s last name or first name to search')
                             ->preload(false)

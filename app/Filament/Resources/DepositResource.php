@@ -59,7 +59,7 @@ class DepositResource extends Resource
                                         return User::where('role', 'tenant')
                                             ->where('status', '!=', 'blocked')
                                             ->get()
-                                            ->mapWithKeys(fn($user) => [$user->id => $user->first_name . ' ' . $user->last_name . ' (' . $user->email . ')']);
+                                            ->mapWithKeys(fn($user) => [$user->id => $user->first_name . ' ' . $user->last_name]);
                                     })
                                     ->searchable()
                                     ->required()

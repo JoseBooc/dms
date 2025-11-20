@@ -59,7 +59,7 @@ class MaintenanceRequestResource extends Resource
                                 return \App\Models\Tenant::whereHas('user', function($query) {
                                     $query->where('status', '!=', 'blocked');
                                 })->with('user')->get()->mapWithKeys(function($tenant) {
-                                    return [$tenant->id => $tenant->first_name . ' ' . $tenant->last_name . ' (' . $tenant->user->email . ')'];
+                                    return [$tenant->id => $tenant->first_name . ' ' . $tenant->last_name];
                                 });
                             })
                             ->searchable()
